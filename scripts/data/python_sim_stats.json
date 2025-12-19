@@ -1,0 +1,189 @@
+{
+  "t_sim": 506.6094842797046,
+  "mission_phase": "EXPLOIT",
+  "num_py_drones": 20,
+  "targets_total": 5,
+  "targets_found": 5,
+  "drones": [
+    {
+      "uid": "PY-1",
+      "type": "PY",
+      "seq": 1,
+      "total_dist_m": 4585.824701863119,
+      "energy_units": 80.0,
+      "encounters": 1859,
+      "base_uploads": 8
+    },
+    {
+      "uid": "PY-2",
+      "type": "PY",
+      "seq": 2,
+      "total_dist_m": 4118.588678497567,
+      "energy_units": 80.0,
+      "encounters": 1882,
+      "base_uploads": 16
+    },
+    {
+      "uid": "PY-3",
+      "type": "PY",
+      "seq": 3,
+      "total_dist_m": 4643.287337955138,
+      "energy_units": 80.0,
+      "encounters": 2852,
+      "base_uploads": 5
+    },
+    {
+      "uid": "PY-4",
+      "type": "PY",
+      "seq": 4,
+      "total_dist_m": 4874.881051679996,
+      "energy_units": 80.0,
+      "encounters": 1446,
+      "base_uploads": 1
+    },
+    {
+      "uid": "PY-5",
+      "type": "PY",
+      "seq": 5,
+      "total_dist_m": 4761.7285441870945,
+      "energy_units": 80.0,
+      "encounters": 1531,
+      "base_uploads": 4
+    },
+    {
+      "uid": "PY-6",
+      "type": "PY",
+      "seq": 6,
+      "total_dist_m": 4830.179863198946,
+      "energy_units": 80.0,
+      "encounters": 1913,
+      "base_uploads": 3
+    },
+    {
+      "uid": "PY-7",
+      "type": "PY",
+      "seq": 7,
+      "total_dist_m": 4432.0420619658735,
+      "energy_units": 80.0,
+      "encounters": 2579,
+      "base_uploads": 10
+    },
+    {
+      "uid": "PY-8",
+      "type": "PY",
+      "seq": 8,
+      "total_dist_m": 4433.169003056311,
+      "energy_units": 80.0,
+      "encounters": 3124,
+      "base_uploads": 9
+    },
+    {
+      "uid": "PY-9",
+      "type": "PY",
+      "seq": 9,
+      "total_dist_m": 4667.43513798638,
+      "energy_units": 80.0,
+      "encounters": 1872,
+      "base_uploads": 4
+    },
+    {
+      "uid": "PY-10",
+      "type": "PY",
+      "seq": 10,
+      "total_dist_m": 4398.352698623131,
+      "energy_units": 80.0,
+      "encounters": 2210,
+      "base_uploads": 11
+    },
+    {
+      "uid": "PY-11",
+      "type": "PY",
+      "seq": 11,
+      "total_dist_m": 4592.427609428317,
+      "energy_units": 80.0,
+      "encounters": 2336,
+      "base_uploads": 7
+    },
+    {
+      "uid": "PY-12",
+      "type": "PY",
+      "seq": 12,
+      "total_dist_m": 4510.2919355336035,
+      "energy_units": 80.0,
+      "encounters": 1704,
+      "base_uploads": 9
+    },
+    {
+      "uid": "PY-13",
+      "type": "PY",
+      "seq": 13,
+      "total_dist_m": 4297.349650882611,
+      "energy_units": 80.0,
+      "encounters": 2729,
+      "base_uploads": 12
+    },
+    {
+      "uid": "PY-14",
+      "type": "PY",
+      "seq": 14,
+      "total_dist_m": 4633.799990581707,
+      "energy_units": 80.0,
+      "encounters": 1526,
+      "base_uploads": 5
+    },
+    {
+      "uid": "PY-15",
+      "type": "PY",
+      "seq": 15,
+      "total_dist_m": 4627.650357426975,
+      "energy_units": 80.0,
+      "encounters": 1606,
+      "base_uploads": 6
+    },
+    {
+      "uid": "PY-16",
+      "type": "PY",
+      "seq": 16,
+      "total_dist_m": 4728.942422428387,
+      "energy_units": 80.0,
+      "encounters": 1844,
+      "base_uploads": 5
+    },
+    {
+      "uid": "PY-17",
+      "type": "PY",
+      "seq": 17,
+      "total_dist_m": 4825.877684587687,
+      "energy_units": 80.0,
+      "encounters": 2259,
+      "base_uploads": 3
+    },
+    {
+      "uid": "PY-18",
+      "type": "PY",
+      "seq": 18,
+      "total_dist_m": 4506.7993743407105,
+      "energy_units": 80.0,
+      "encounters": 2123,
+      "base_uploads": 9
+    },
+    {
+      "uid": "PY-19",
+      "type": "PY",
+      "seq": 19,
+      "total_dist_m": 4250.269594902357,
+      "energy_units": 80.0,
+      "encounters": 1345,
+      "base_uploads": 13
+    },
+    {
+      "uid": "PY-20",
+      "type": "PY",
+      "seq": 20,
+      "total_dist_m": 4321.766935875385,
+      "energy_units": 80.0,
+      "encounters": 3487,
+      "base_uploads": 9
+    }
+  ]
+}

@@ -1,0 +1,2285 @@
+{
+  "static": [
+    {
+      "cell_x": 1169,
+      "cell_y": 983,
+      "danger_radius": 5,
+      "height_m": 40.000000000000036
+    },
+    {
+      "cell_x": 1180,
+      "cell_y": 1015,
+      "danger_radius": 5,
+      "height_m": 40.000000000000036
+    },
+    {
+      "cell_x": 1180,
+      "cell_y": 1014,
+      "danger_radius": 5,
+      "height_m": 40.000000000000036
+    },
+    {
+      "cell_x": 1180,
+      "cell_y": 1012,
+      "danger_radius": 5,
+      "height_m": 40.000000000000036
+    },
+    {
+      "cell_x": 1169,
+      "cell_y": 984,
+      "danger_radius": 5,
+      "height_m": 40.000000000000036
+    },
+    {
+      "cell_x": 1168,
+      "cell_y": 983,
+      "danger_radius": 5,
+      "height_m": 40.000000000000036
+    },
+    {
+      "cell_x": 1008,
+      "cell_y": 1018,
+      "danger_radius": 5,
+      "height_m": 40.000000000000036
+    },
+    {
+      "cell_x": 1007,
+      "cell_y": 1027,
+      "danger_radius": 5,
+      "height_m": 44.99999999999993
+    },
+    {
+      "cell_x": 1008,
+      "cell_y": 1024,
+      "danger_radius": 5,
+      "height_m": 44.99999999999993
+    },
+    {
+      "cell_x": 1008,
+      "cell_y": 1023,
+      "danger_radius": 5,
+      "height_m": 44.99999999999993
+    },
+    {
+      "cell_x": 958,
+      "cell_y": 1144,
+      "danger_radius": 5,
+      "height_m": 41.999999999999815
+    },
+    {
+      "cell_x": 952,
+      "cell_y": 1144,
+      "danger_radius": 5,
+      "height_m": 41.999999999999815
+    },
+    {
+      "cell_x": 960,
+      "cell_y": 1141,
+      "danger_radius": 5,
+      "height_m": 41.999999999999815
+    },
+    {
+      "cell_x": 1028,
+      "cell_y": 1024,
+      "danger_radius": 5,
+      "height_m": 59.99999999999961
+    },
+    {
+      "cell_x": 1032,
+      "cell_y": 1020,
+      "danger_radius": 5,
+      "height_m": 59.99999999999961
+    },
+    {
+      "cell_x": 1035,
+      "cell_y": 1017,
+      "danger_radius": 5,
+      "height_m": 59.99999999999961
+    },
+    {
+      "cell_x": 1036,
+      "cell_y": 1016,
+      "danger_radius": 5,
+      "height_m": 59.99999999999961
+    },
+    {
+      "cell_x": 1034,
+      "cell_y": 1020,
+      "danger_radius": 5,
+      "height_m": 59.99999999999961
+    },
+    {
+      "cell_x": 1035,
+      "cell_y": 1016,
+      "danger_radius": 5,
+      "height_m": 59.99999999999961
+    },
+    {
+      "cell_x": 1033,
+      "cell_y": 1017,
+      "danger_radius": 5,
+      "height_m": 59.99999999999961
+    },
+    {
+      "cell_x": 1027,
+      "cell_y": 1016,
+      "danger_radius": 5,
+      "height_m": 59.99999999999961
+    },
+    {
+      "cell_x": 1031,
+      "cell_y": 1010,
+      "danger_radius": 5,
+      "height_m": 59.99999999999961
+    }
+  ],
+  "dynamic": [
+    {
+      "id": "437163dd-cddd-47be-9deb-686351950dbc",
+      "type": "dynamic",
+      "speed": 0.5,
+      "danger_radius": 5,
+      "height_m": 60.0,
+      "arrayOfCells": [
+        {
+          "cell_x": 1147,
+          "cell_y": 1215
+        },
+        {
+          "cell_x": 1146,
+          "cell_y": 1214
+        },
+        {
+          "cell_x": 1145,
+          "cell_y": 1213
+        },
+        {
+          "cell_x": 1144,
+          "cell_y": 1213
+        },
+        {
+          "cell_x": 1143,
+          "cell_y": 1212
+        },
+        {
+          "cell_x": 1142,
+          "cell_y": 1211
+        },
+        {
+          "cell_x": 1141,
+          "cell_y": 1210
+        },
+        {
+          "cell_x": 1140,
+          "cell_y": 1209
+        },
+        {
+          "cell_x": 1139,
+          "cell_y": 1209
+        },
+        {
+          "cell_x": 1138,
+          "cell_y": 1208
+        },
+        {
+          "cell_x": 1137,
+          "cell_y": 1207
+        },
+        {
+          "cell_x": 1136,
+          "cell_y": 1206
+        },
+        {
+          "cell_x": 1135,
+          "cell_y": 1205
+        },
+        {
+          "cell_x": 1134,
+          "cell_y": 1205
+        },
+        {
+          "cell_x": 1133,
+          "cell_y": 1204
+        },
+        {
+          "cell_x": 1132,
+          "cell_y": 1203
+        },
+        {
+          "cell_x": 1131,
+          "cell_y": 1202
+        },
+        {
+          "cell_x": 1130,
+          "cell_y": 1201
+        },
+        {
+          "cell_x": 1129,
+          "cell_y": 1201
+        },
+        {
+          "cell_x": 1128,
+          "cell_y": 1200
+        },
+        {
+          "cell_x": 1127,
+          "cell_y": 1199
+        },
+        {
+          "cell_x": 1126,
+          "cell_y": 1198
+        },
+        {
+          "cell_x": 1125,
+          "cell_y": 1197
+        },
+        {
+          "cell_x": 1124,
+          "cell_y": 1197
+        },
+        {
+          "cell_x": 1123,
+          "cell_y": 1196
+        },
+        {
+          "cell_x": 1122,
+          "cell_y": 1195
+        },
+        {
+          "cell_x": 1121,
+          "cell_y": 1196
+        },
+        {
+          "cell_x": 1120,
+          "cell_y": 1197
+        },
+        {
+          "cell_x": 1119,
+          "cell_y": 1197
+        },
+        {
+          "cell_x": 1118,
+          "cell_y": 1198
+        },
+        {
+          "cell_x": 1117,
+          "cell_y": 1199
+        },
+        {
+          "cell_x": 1116,
+          "cell_y": 1200
+        },
+        {
+          "cell_x": 1115,
+          "cell_y": 1200
+        },
+        {
+          "cell_x": 1114,
+          "cell_y": 1201
+        },
+        {
+          "cell_x": 1113,
+          "cell_y": 1202
+        },
+        {
+          "cell_x": 1112,
+          "cell_y": 1203
+        },
+        {
+          "cell_x": 1111,
+          "cell_y": 1203
+        },
+        {
+          "cell_x": 1110,
+          "cell_y": 1204
+        },
+        {
+          "cell_x": 1109,
+          "cell_y": 1205
+        },
+        {
+          "cell_x": 1108,
+          "cell_y": 1206
+        },
+        {
+          "cell_x": 1107,
+          "cell_y": 1206
+        },
+        {
+          "cell_x": 1106,
+          "cell_y": 1207
+        },
+        {
+          "cell_x": 1105,
+          "cell_y": 1208
+        },
+        {
+          "cell_x": 1104,
+          "cell_y": 1209
+        },
+        {
+          "cell_x": 1103,
+          "cell_y": 1209
+        },
+        {
+          "cell_x": 1102,
+          "cell_y": 1210
+        },
+        {
+          "cell_x": 1101,
+          "cell_y": 1211
+        },
+        {
+          "cell_x": 1100,
+          "cell_y": 1212
+        },
+        {
+          "cell_x": 1099,
+          "cell_y": 1213
+        },
+        {
+          "cell_x": 1098,
+          "cell_y": 1213
+        },
+        {
+          "cell_x": 1097,
+          "cell_y": 1214
+        },
+        {
+          "cell_x": 1096,
+          "cell_y": 1215
+        },
+        {
+          "cell_x": 1095,
+          "cell_y": 1216
+        },
+        {
+          "cell_x": 1094,
+          "cell_y": 1216
+        },
+        {
+          "cell_x": 1093,
+          "cell_y": 1217
+        },
+        {
+          "cell_x": 1092,
+          "cell_y": 1218
+        },
+        {
+          "cell_x": 1091,
+          "cell_y": 1219
+        },
+        {
+          "cell_x": 1090,
+          "cell_y": 1219
+        },
+        {
+          "cell_x": 1089,
+          "cell_y": 1220
+        },
+        {
+          "cell_x": 1088,
+          "cell_y": 1221
+        },
+        {
+          "cell_x": 1087,
+          "cell_y": 1222
+        },
+        {
+          "cell_x": 1086,
+          "cell_y": 1222
+        },
+        {
+          "cell_x": 1085,
+          "cell_y": 1223
+        },
+        {
+          "cell_x": 1084,
+          "cell_y": 1224
+        },
+        {
+          "cell_x": 1084,
+          "cell_y": 1225
+        },
+        {
+          "cell_x": 1084,
+          "cell_y": 1226
+        },
+        {
+          "cell_x": 1085,
+          "cell_y": 1227
+        },
+        {
+          "cell_x": 1085,
+          "cell_y": 1228
+        },
+        {
+          "cell_x": 1085,
+          "cell_y": 1229
+        },
+        {
+          "cell_x": 1085,
+          "cell_y": 1230
+        },
+        {
+          "cell_x": 1085,
+          "cell_y": 1231
+        },
+        {
+          "cell_x": 1086,
+          "cell_y": 1232
+        },
+        {
+          "cell_x": 1086,
+          "cell_y": 1233
+        },
+        {
+          "cell_x": 1086,
+          "cell_y": 1234
+        },
+        {
+          "cell_x": 1086,
+          "cell_y": 1235
+        },
+        {
+          "cell_x": 1086,
+          "cell_y": 1236
+        },
+        {
+          "cell_x": 1086,
+          "cell_y": 1237
+        },
+        {
+          "cell_x": 1087,
+          "cell_y": 1238
+        },
+        {
+          "cell_x": 1087,
+          "cell_y": 1239
+        },
+        {
+          "cell_x": 1087,
+          "cell_y": 1240
+        },
+        {
+          "cell_x": 1087,
+          "cell_y": 1241
+        },
+        {
+          "cell_x": 1087,
+          "cell_y": 1242
+        },
+        {
+          "cell_x": 1088,
+          "cell_y": 1243
+        },
+        {
+          "cell_x": 1088,
+          "cell_y": 1244
+        },
+        {
+          "cell_x": 1088,
+          "cell_y": 1245
+        },
+        {
+          "cell_x": 1088,
+          "cell_y": 1246
+        },
+        {
+          "cell_x": 1088,
+          "cell_y": 1247
+        },
+        {
+          "cell_x": 1089,
+          "cell_y": 1248
+        },
+        {
+          "cell_x": 1089,
+          "cell_y": 1249
+        },
+        {
+          "cell_x": 1089,
+          "cell_y": 1250
+        },
+        {
+          "cell_x": 1089,
+          "cell_y": 1251
+        },
+        {
+          "cell_x": 1089,
+          "cell_y": 1252
+        },
+        {
+          "cell_x": 1089,
+          "cell_y": 1253
+        },
+        {
+          "cell_x": 1090,
+          "cell_y": 1254
+        },
+        {
+          "cell_x": 1090,
+          "cell_y": 1255
+        },
+        {
+          "cell_x": 1090,
+          "cell_y": 1256
+        },
+        {
+          "cell_x": 1090,
+          "cell_y": 1257
+        },
+        {
+          "cell_x": 1090,
+          "cell_y": 1258
+        },
+        {
+          "cell_x": 1091,
+          "cell_y": 1259
+        },
+        {
+          "cell_x": 1091,
+          "cell_y": 1260
+        },
+        {
+          "cell_x": 1091,
+          "cell_y": 1261
+        },
+        {
+          "cell_x": 1092,
+          "cell_y": 1261
+        },
+        {
+          "cell_x": 1093,
+          "cell_y": 1261
+        },
+        {
+          "cell_x": 1094,
+          "cell_y": 1261
+        },
+        {
+          "cell_x": 1095,
+          "cell_y": 1261
+        },
+        {
+          "cell_x": 1096,
+          "cell_y": 1261
+        },
+        {
+          "cell_x": 1097,
+          "cell_y": 1261
+        },
+        {
+          "cell_x": 1098,
+          "cell_y": 1261
+        },
+        {
+          "cell_x": 1099,
+          "cell_y": 1260
+        },
+        {
+          "cell_x": 1100,
+          "cell_y": 1260
+        },
+        {
+          "cell_x": 1101,
+          "cell_y": 1260
+        },
+        {
+          "cell_x": 1102,
+          "cell_y": 1260
+        },
+        {
+          "cell_x": 1103,
+          "cell_y": 1260
+        },
+        {
+          "cell_x": 1104,
+          "cell_y": 1260
+        },
+        {
+          "cell_x": 1105,
+          "cell_y": 1260
+        },
+        {
+          "cell_x": 1106,
+          "cell_y": 1260
+        },
+        {
+          "cell_x": 1107,
+          "cell_y": 1260
+        },
+        {
+          "cell_x": 1108,
+          "cell_y": 1260
+        },
+        {
+          "cell_x": 1109,
+          "cell_y": 1260
+        },
+        {
+          "cell_x": 1110,
+          "cell_y": 1260
+        },
+        {
+          "cell_x": 1111,
+          "cell_y": 1260
+        },
+        {
+          "cell_x": 1112,
+          "cell_y": 1260
+        },
+        {
+          "cell_x": 1113,
+          "cell_y": 1260
+        },
+        {
+          "cell_x": 1114,
+          "cell_y": 1260
+        },
+        {
+          "cell_x": 1115,
+          "cell_y": 1259
+        },
+        {
+          "cell_x": 1116,
+          "cell_y": 1259
+        },
+        {
+          "cell_x": 1117,
+          "cell_y": 1259
+        },
+        {
+          "cell_x": 1118,
+          "cell_y": 1259
+        },
+        {
+          "cell_x": 1119,
+          "cell_y": 1259
+        },
+        {
+          "cell_x": 1120,
+          "cell_y": 1259
+        },
+        {
+          "cell_x": 1121,
+          "cell_y": 1259
+        },
+        {
+          "cell_x": 1122,
+          "cell_y": 1259
+        },
+        {
+          "cell_x": 1123,
+          "cell_y": 1259
+        },
+        {
+          "cell_x": 1124,
+          "cell_y": 1259
+        },
+        {
+          "cell_x": 1125,
+          "cell_y": 1259
+        },
+        {
+          "cell_x": 1126,
+          "cell_y": 1259
+        },
+        {
+          "cell_x": 1127,
+          "cell_y": 1259
+        },
+        {
+          "cell_x": 1128,
+          "cell_y": 1259
+        },
+        {
+          "cell_x": 1129,
+          "cell_y": 1259
+        },
+        {
+          "cell_x": 1130,
+          "cell_y": 1259
+        },
+        {
+          "cell_x": 1131,
+          "cell_y": 1258
+        },
+        {
+          "cell_x": 1132,
+          "cell_y": 1258
+        },
+        {
+          "cell_x": 1133,
+          "cell_y": 1258
+        },
+        {
+          "cell_x": 1134,
+          "cell_y": 1258
+        },
+        {
+          "cell_x": 1135,
+          "cell_y": 1258
+        },
+        {
+          "cell_x": 1136,
+          "cell_y": 1258
+        },
+        {
+          "cell_x": 1137,
+          "cell_y": 1258
+        },
+        {
+          "cell_x": 1138,
+          "cell_y": 1258
+        },
+        {
+          "cell_x": 1137,
+          "cell_y": 1257
+        },
+        {
+          "cell_x": 1136,
+          "cell_y": 1256
+        },
+        {
+          "cell_x": 1136,
+          "cell_y": 1255
+        },
+        {
+          "cell_x": 1135,
+          "cell_y": 1254
+        },
+        {
+          "cell_x": 1134,
+          "cell_y": 1253
+        },
+        {
+          "cell_x": 1133,
+          "cell_y": 1252
+        },
+        {
+          "cell_x": 1132,
+          "cell_y": 1251
+        },
+        {
+          "cell_x": 1132,
+          "cell_y": 1250
+        },
+        {
+          "cell_x": 1131,
+          "cell_y": 1249
+        },
+        {
+          "cell_x": 1130,
+          "cell_y": 1248
+        },
+        {
+          "cell_x": 1129,
+          "cell_y": 1247
+        },
+        {
+          "cell_x": 1128,
+          "cell_y": 1246
+        },
+        {
+          "cell_x": 1128,
+          "cell_y": 1245
+        },
+        {
+          "cell_x": 1127,
+          "cell_y": 1244
+        },
+        {
+          "cell_x": 1126,
+          "cell_y": 1243
+        },
+        {
+          "cell_x": 1126,
+          "cell_y": 1242
+        },
+        {
+          "cell_x": 1126,
+          "cell_y": 1241
+        },
+        {
+          "cell_x": 1126,
+          "cell_y": 1240
+        },
+        {
+          "cell_x": 1126,
+          "cell_y": 1239
+        },
+        {
+          "cell_x": 1126,
+          "cell_y": 1238
+        },
+        {
+          "cell_x": 1126,
+          "cell_y": 1237
+        },
+        {
+          "cell_x": 1126,
+          "cell_y": 1236
+        },
+        {
+          "cell_x": 1126,
+          "cell_y": 1235
+        },
+        {
+          "cell_x": 1126,
+          "cell_y": 1234
+        },
+        {
+          "cell_x": 1125,
+          "cell_y": 1233
+        },
+        {
+          "cell_x": 1125,
+          "cell_y": 1232
+        },
+        {
+          "cell_x": 1125,
+          "cell_y": 1231
+        },
+        {
+          "cell_x": 1125,
+          "cell_y": 1230
+        },
+        {
+          "cell_x": 1125,
+          "cell_y": 1229
+        },
+        {
+          "cell_x": 1125,
+          "cell_y": 1228
+        },
+        {
+          "cell_x": 1125,
+          "cell_y": 1227
+        },
+        {
+          "cell_x": 1125,
+          "cell_y": 1226
+        },
+        {
+          "cell_x": 1125,
+          "cell_y": 1225
+        },
+        {
+          "cell_x": 1125,
+          "cell_y": 1224
+        },
+        {
+          "cell_x": 1126,
+          "cell_y": 1224
+        },
+        {
+          "cell_x": 1127,
+          "cell_y": 1223
+        },
+        {
+          "cell_x": 1128,
+          "cell_y": 1223
+        },
+        {
+          "cell_x": 1129,
+          "cell_y": 1222
+        },
+        {
+          "cell_x": 1130,
+          "cell_y": 1222
+        },
+        {
+          "cell_x": 1131,
+          "cell_y": 1221
+        },
+        {
+          "cell_x": 1132,
+          "cell_y": 1221
+        },
+        {
+          "cell_x": 1133,
+          "cell_y": 1220
+        },
+        {
+          "cell_x": 1134,
+          "cell_y": 1220
+        },
+        {
+          "cell_x": 1135,
+          "cell_y": 1220
+        },
+        {
+          "cell_x": 1136,
+          "cell_y": 1219
+        },
+        {
+          "cell_x": 1137,
+          "cell_y": 1219
+        },
+        {
+          "cell_x": 1138,
+          "cell_y": 1218
+        },
+        {
+          "cell_x": 1139,
+          "cell_y": 1218
+        },
+        {
+          "cell_x": 1140,
+          "cell_y": 1217
+        },
+        {
+          "cell_x": 1141,
+          "cell_y": 1217
+        },
+        {
+          "cell_x": 1142,
+          "cell_y": 1216
+        },
+        {
+          "cell_x": 1143,
+          "cell_y": 1216
+        },
+        {
+          "cell_x": 1144,
+          "cell_y": 1216
+        },
+        {
+          "cell_x": 1145,
+          "cell_y": 1216
+        },
+        {
+          "cell_x": 1146,
+          "cell_y": 1217
+        },
+        {
+          "cell_x": 1147,
+          "cell_y": 1217
+        }
+      ]
+    },
+    {
+      "id": "7fc9dab3-4ba3-4a87-b56b-97b6b4ca58c7",
+      "type": "dynamic",
+      "speed": 0.5,
+      "danger_radius": 5,
+      "height_m": 60.0,
+      "arrayOfCells": [
+        {
+          "cell_x": 1012,
+          "cell_y": 1165
+        },
+        {
+          "cell_x": 1011,
+          "cell_y": 1165
+        },
+        {
+          "cell_x": 1010,
+          "cell_y": 1165
+        },
+        {
+          "cell_x": 1009,
+          "cell_y": 1165
+        },
+        {
+          "cell_x": 1008,
+          "cell_y": 1165
+        },
+        {
+          "cell_x": 1007,
+          "cell_y": 1165
+        },
+        {
+          "cell_x": 1006,
+          "cell_y": 1166
+        },
+        {
+          "cell_x": 1005,
+          "cell_y": 1166
+        },
+        {
+          "cell_x": 1004,
+          "cell_y": 1166
+        },
+        {
+          "cell_x": 1003,
+          "cell_y": 1166
+        },
+        {
+          "cell_x": 1002,
+          "cell_y": 1166
+        },
+        {
+          "cell_x": 1001,
+          "cell_y": 1166
+        },
+        {
+          "cell_x": 1000,
+          "cell_y": 1166
+        },
+        {
+          "cell_x": 999,
+          "cell_y": 1166
+        },
+        {
+          "cell_x": 998,
+          "cell_y": 1166
+        },
+        {
+          "cell_x": 997,
+          "cell_y": 1166
+        },
+        {
+          "cell_x": 996,
+          "cell_y": 1166
+        },
+        {
+          "cell_x": 995,
+          "cell_y": 1167
+        },
+        {
+          "cell_x": 994,
+          "cell_y": 1167
+        },
+        {
+          "cell_x": 993,
+          "cell_y": 1167
+        },
+        {
+          "cell_x": 992,
+          "cell_y": 1167
+        },
+        {
+          "cell_x": 991,
+          "cell_y": 1167
+        },
+        {
+          "cell_x": 990,
+          "cell_y": 1167
+        },
+        {
+          "cell_x": 989,
+          "cell_y": 1167
+        },
+        {
+          "cell_x": 988,
+          "cell_y": 1167
+        },
+        {
+          "cell_x": 987,
+          "cell_y": 1167
+        },
+        {
+          "cell_x": 986,
+          "cell_y": 1167
+        },
+        {
+          "cell_x": 985,
+          "cell_y": 1167
+        },
+        {
+          "cell_x": 984,
+          "cell_y": 1168
+        },
+        {
+          "cell_x": 983,
+          "cell_y": 1168
+        },
+        {
+          "cell_x": 982,
+          "cell_y": 1168
+        },
+        {
+          "cell_x": 981,
+          "cell_y": 1168
+        },
+        {
+          "cell_x": 980,
+          "cell_y": 1168
+        },
+        {
+          "cell_x": 979,
+          "cell_y": 1168
+        },
+        {
+          "cell_x": 978,
+          "cell_y": 1169
+        },
+        {
+          "cell_x": 978,
+          "cell_y": 1170
+        },
+        {
+          "cell_x": 977,
+          "cell_y": 1171
+        },
+        {
+          "cell_x": 977,
+          "cell_y": 1172
+        },
+        {
+          "cell_x": 976,
+          "cell_y": 1173
+        },
+        {
+          "cell_x": 976,
+          "cell_y": 1174
+        },
+        {
+          "cell_x": 975,
+          "cell_y": 1175
+        },
+        {
+          "cell_x": 975,
+          "cell_y": 1176
+        },
+        {
+          "cell_x": 974,
+          "cell_y": 1177
+        },
+        {
+          "cell_x": 974,
+          "cell_y": 1178
+        },
+        {
+          "cell_x": 973,
+          "cell_y": 1179
+        },
+        {
+          "cell_x": 973,
+          "cell_y": 1180
+        },
+        {
+          "cell_x": 972,
+          "cell_y": 1181
+        },
+        {
+          "cell_x": 972,
+          "cell_y": 1182
+        },
+        {
+          "cell_x": 971,
+          "cell_y": 1183
+        },
+        {
+          "cell_x": 970,
+          "cell_y": 1184
+        },
+        {
+          "cell_x": 970,
+          "cell_y": 1185
+        },
+        {
+          "cell_x": 969,
+          "cell_y": 1186
+        },
+        {
+          "cell_x": 969,
+          "cell_y": 1187
+        },
+        {
+          "cell_x": 968,
+          "cell_y": 1188
+        },
+        {
+          "cell_x": 968,
+          "cell_y": 1189
+        },
+        {
+          "cell_x": 967,
+          "cell_y": 1190
+        },
+        {
+          "cell_x": 967,
+          "cell_y": 1191
+        },
+        {
+          "cell_x": 966,
+          "cell_y": 1192
+        },
+        {
+          "cell_x": 966,
+          "cell_y": 1193
+        },
+        {
+          "cell_x": 965,
+          "cell_y": 1194
+        },
+        {
+          "cell_x": 965,
+          "cell_y": 1195
+        },
+        {
+          "cell_x": 964,
+          "cell_y": 1196
+        },
+        {
+          "cell_x": 964,
+          "cell_y": 1197
+        },
+        {
+          "cell_x": 963,
+          "cell_y": 1198
+        },
+        {
+          "cell_x": 964,
+          "cell_y": 1199
+        },
+        {
+          "cell_x": 965,
+          "cell_y": 1199
+        },
+        {
+          "cell_x": 966,
+          "cell_y": 1200
+        },
+        {
+          "cell_x": 967,
+          "cell_y": 1201
+        },
+        {
+          "cell_x": 968,
+          "cell_y": 1201
+        },
+        {
+          "cell_x": 969,
+          "cell_y": 1202
+        },
+        {
+          "cell_x": 970,
+          "cell_y": 1203
+        },
+        {
+          "cell_x": 971,
+          "cell_y": 1203
+        },
+        {
+          "cell_x": 972,
+          "cell_y": 1204
+        },
+        {
+          "cell_x": 973,
+          "cell_y": 1205
+        },
+        {
+          "cell_x": 974,
+          "cell_y": 1206
+        },
+        {
+          "cell_x": 975,
+          "cell_y": 1206
+        },
+        {
+          "cell_x": 976,
+          "cell_y": 1207
+        },
+        {
+          "cell_x": 977,
+          "cell_y": 1208
+        },
+        {
+          "cell_x": 978,
+          "cell_y": 1208
+        },
+        {
+          "cell_x": 979,
+          "cell_y": 1209
+        },
+        {
+          "cell_x": 980,
+          "cell_y": 1210
+        },
+        {
+          "cell_x": 981,
+          "cell_y": 1210
+        },
+        {
+          "cell_x": 982,
+          "cell_y": 1211
+        },
+        {
+          "cell_x": 983,
+          "cell_y": 1212
+        },
+        {
+          "cell_x": 984,
+          "cell_y": 1212
+        },
+        {
+          "cell_x": 985,
+          "cell_y": 1213
+        },
+        {
+          "cell_x": 986,
+          "cell_y": 1214
+        },
+        {
+          "cell_x": 987,
+          "cell_y": 1214
+        },
+        {
+          "cell_x": 988,
+          "cell_y": 1215
+        },
+        {
+          "cell_x": 989,
+          "cell_y": 1216
+        },
+        {
+          "cell_x": 990,
+          "cell_y": 1217
+        },
+        {
+          "cell_x": 991,
+          "cell_y": 1217
+        },
+        {
+          "cell_x": 992,
+          "cell_y": 1218
+        },
+        {
+          "cell_x": 993,
+          "cell_y": 1219
+        },
+        {
+          "cell_x": 994,
+          "cell_y": 1219
+        },
+        {
+          "cell_x": 995,
+          "cell_y": 1220
+        },
+        {
+          "cell_x": 996,
+          "cell_y": 1220
+        },
+        {
+          "cell_x": 997,
+          "cell_y": 1220
+        },
+        {
+          "cell_x": 998,
+          "cell_y": 1220
+        },
+        {
+          "cell_x": 999,
+          "cell_y": 1220
+        },
+        {
+          "cell_x": 1000,
+          "cell_y": 1220
+        },
+        {
+          "cell_x": 1001,
+          "cell_y": 1220
+        },
+        {
+          "cell_x": 1002,
+          "cell_y": 1220
+        },
+        {
+          "cell_x": 1003,
+          "cell_y": 1220
+        },
+        {
+          "cell_x": 1004,
+          "cell_y": 1220
+        },
+        {
+          "cell_x": 1005,
+          "cell_y": 1220
+        },
+        {
+          "cell_x": 1006,
+          "cell_y": 1220
+        },
+        {
+          "cell_x": 1007,
+          "cell_y": 1220
+        },
+        {
+          "cell_x": 1008,
+          "cell_y": 1220
+        },
+        {
+          "cell_x": 1009,
+          "cell_y": 1220
+        },
+        {
+          "cell_x": 1010,
+          "cell_y": 1220
+        },
+        {
+          "cell_x": 1011,
+          "cell_y": 1220
+        },
+        {
+          "cell_x": 1012,
+          "cell_y": 1220
+        },
+        {
+          "cell_x": 1013,
+          "cell_y": 1220
+        },
+        {
+          "cell_x": 1014,
+          "cell_y": 1220
+        },
+        {
+          "cell_x": 1015,
+          "cell_y": 1220
+        },
+        {
+          "cell_x": 1016,
+          "cell_y": 1220
+        },
+        {
+          "cell_x": 1017,
+          "cell_y": 1220
+        },
+        {
+          "cell_x": 1018,
+          "cell_y": 1220
+        },
+        {
+          "cell_x": 1017,
+          "cell_y": 1219
+        },
+        {
+          "cell_x": 1016,
+          "cell_y": 1219
+        },
+        {
+          "cell_x": 1015,
+          "cell_y": 1218
+        },
+        {
+          "cell_x": 1014,
+          "cell_y": 1218
+        },
+        {
+          "cell_x": 1013,
+          "cell_y": 1217
+        },
+        {
+          "cell_x": 1012,
+          "cell_y": 1216
+        },
+        {
+          "cell_x": 1011,
+          "cell_y": 1216
+        },
+        {
+          "cell_x": 1010,
+          "cell_y": 1215
+        },
+        {
+          "cell_x": 1009,
+          "cell_y": 1215
+        },
+        {
+          "cell_x": 1008,
+          "cell_y": 1214
+        },
+        {
+          "cell_x": 1007,
+          "cell_y": 1213
+        },
+        {
+          "cell_x": 1006,
+          "cell_y": 1213
+        },
+        {
+          "cell_x": 1005,
+          "cell_y": 1212
+        },
+        {
+          "cell_x": 1004,
+          "cell_y": 1211
+        },
+        {
+          "cell_x": 1003,
+          "cell_y": 1211
+        },
+        {
+          "cell_x": 1002,
+          "cell_y": 1210
+        },
+        {
+          "cell_x": 1001,
+          "cell_y": 1210
+        },
+        {
+          "cell_x": 1000,
+          "cell_y": 1209
+        },
+        {
+          "cell_x": 999,
+          "cell_y": 1208
+        },
+        {
+          "cell_x": 998,
+          "cell_y": 1208
+        },
+        {
+          "cell_x": 997,
+          "cell_y": 1207
+        },
+        {
+          "cell_x": 996,
+          "cell_y": 1207
+        },
+        {
+          "cell_x": 995,
+          "cell_y": 1206
+        },
+        {
+          "cell_x": 994,
+          "cell_y": 1205
+        },
+        {
+          "cell_x": 993,
+          "cell_y": 1205
+        },
+        {
+          "cell_x": 992,
+          "cell_y": 1204
+        },
+        {
+          "cell_x": 991,
+          "cell_y": 1204
+        },
+        {
+          "cell_x": 990,
+          "cell_y": 1203
+        },
+        {
+          "cell_x": 989,
+          "cell_y": 1202
+        },
+        {
+          "cell_x": 988,
+          "cell_y": 1202
+        },
+        {
+          "cell_x": 987,
+          "cell_y": 1201
+        },
+        {
+          "cell_x": 986,
+          "cell_y": 1200
+        },
+        {
+          "cell_x": 985,
+          "cell_y": 1200
+        },
+        {
+          "cell_x": 984,
+          "cell_y": 1199
+        },
+        {
+          "cell_x": 983,
+          "cell_y": 1199
+        },
+        {
+          "cell_x": 982,
+          "cell_y": 1198
+        },
+        {
+          "cell_x": 981,
+          "cell_y": 1197
+        },
+        {
+          "cell_x": 980,
+          "cell_y": 1197
+        },
+        {
+          "cell_x": 979,
+          "cell_y": 1196
+        },
+        {
+          "cell_x": 978,
+          "cell_y": 1196
+        },
+        {
+          "cell_x": 977,
+          "cell_y": 1195
+        },
+        {
+          "cell_x": 977,
+          "cell_y": 1194
+        },
+        {
+          "cell_x": 978,
+          "cell_y": 1193
+        },
+        {
+          "cell_x": 978,
+          "cell_y": 1192
+        },
+        {
+          "cell_x": 979,
+          "cell_y": 1191
+        },
+        {
+          "cell_x": 979,
+          "cell_y": 1190
+        },
+        {
+          "cell_x": 980,
+          "cell_y": 1189
+        },
+        {
+          "cell_x": 980,
+          "cell_y": 1188
+        },
+        {
+          "cell_x": 981,
+          "cell_y": 1187
+        },
+        {
+          "cell_x": 981,
+          "cell_y": 1186
+        },
+        {
+          "cell_x": 982,
+          "cell_y": 1185
+        },
+        {
+          "cell_x": 982,
+          "cell_y": 1184
+        },
+        {
+          "cell_x": 983,
+          "cell_y": 1183
+        },
+        {
+          "cell_x": 983,
+          "cell_y": 1182
+        },
+        {
+          "cell_x": 984,
+          "cell_y": 1181
+        },
+        {
+          "cell_x": 984,
+          "cell_y": 1180
+        },
+        {
+          "cell_x": 985,
+          "cell_y": 1179
+        },
+        {
+          "cell_x": 985,
+          "cell_y": 1178
+        },
+        {
+          "cell_x": 986,
+          "cell_y": 1177
+        },
+        {
+          "cell_x": 987,
+          "cell_y": 1177
+        },
+        {
+          "cell_x": 988,
+          "cell_y": 1177
+        },
+        {
+          "cell_x": 989,
+          "cell_y": 1176
+        },
+        {
+          "cell_x": 990,
+          "cell_y": 1176
+        },
+        {
+          "cell_x": 991,
+          "cell_y": 1176
+        },
+        {
+          "cell_x": 992,
+          "cell_y": 1176
+        },
+        {
+          "cell_x": 993,
+          "cell_y": 1175
+        },
+        {
+          "cell_x": 994,
+          "cell_y": 1175
+        },
+        {
+          "cell_x": 995,
+          "cell_y": 1175
+        },
+        {
+          "cell_x": 996,
+          "cell_y": 1175
+        },
+        {
+          "cell_x": 997,
+          "cell_y": 1174
+        },
+        {
+          "cell_x": 998,
+          "cell_y": 1174
+        },
+        {
+          "cell_x": 999,
+          "cell_y": 1174
+        },
+        {
+          "cell_x": 1000,
+          "cell_y": 1174
+        },
+        {
+          "cell_x": 1001,
+          "cell_y": 1174
+        },
+        {
+          "cell_x": 1002,
+          "cell_y": 1173
+        },
+        {
+          "cell_x": 1003,
+          "cell_y": 1173
+        },
+        {
+          "cell_x": 1004,
+          "cell_y": 1173
+        },
+        {
+          "cell_x": 1005,
+          "cell_y": 1173
+        },
+        {
+          "cell_x": 1006,
+          "cell_y": 1172
+        },
+        {
+          "cell_x": 1007,
+          "cell_y": 1172
+        },
+        {
+          "cell_x": 1008,
+          "cell_y": 1172
+        },
+        {
+          "cell_x": 1009,
+          "cell_y": 1172
+        },
+        {
+          "cell_x": 1010,
+          "cell_y": 1171
+        },
+        {
+          "cell_x": 1011,
+          "cell_y": 1171
+        },
+        {
+          "cell_x": 1012,
+          "cell_y": 1171
+        },
+        {
+          "cell_x": 1012,
+          "cell_y": 1170
+        },
+        {
+          "cell_x": 1012,
+          "cell_y": 1169
+        },
+        {
+          "cell_x": 1013,
+          "cell_y": 1168
+        },
+        {
+          "cell_x": 1013,
+          "cell_y": 1167
+        },
+        {
+          "cell_x": 1013,
+          "cell_y": 1166
+        }
+      ]
+    },
+    {
+      "id": "ec3f53fa-776c-4d33-a0ba-c58b27d94adc",
+      "type": "dynamic",
+      "speed": 0.5,
+      "danger_radius": 5,
+      "height_m": 60.0,
+      "arrayOfCells": [
+        {
+          "cell_x": 1152,
+          "cell_y": 1184
+        },
+        {
+          "cell_x": 1151,
+          "cell_y": 1184
+        },
+        {
+          "cell_x": 1150,
+          "cell_y": 1185
+        },
+        {
+          "cell_x": 1149,
+          "cell_y": 1185
+        },
+        {
+          "cell_x": 1148,
+          "cell_y": 1185
+        },
+        {
+          "cell_x": 1147,
+          "cell_y": 1186
+        },
+        {
+          "cell_x": 1146,
+          "cell_y": 1186
+        },
+        {
+          "cell_x": 1145,
+          "cell_y": 1187
+        },
+        {
+          "cell_x": 1144,
+          "cell_y": 1187
+        },
+        {
+          "cell_x": 1143,
+          "cell_y": 1187
+        },
+        {
+          "cell_x": 1142,
+          "cell_y": 1188
+        },
+        {
+          "cell_x": 1141,
+          "cell_y": 1188
+        },
+        {
+          "cell_x": 1140,
+          "cell_y": 1188
+        },
+        {
+          "cell_x": 1139,
+          "cell_y": 1189
+        },
+        {
+          "cell_x": 1138,
+          "cell_y": 1189
+        },
+        {
+          "cell_x": 1137,
+          "cell_y": 1190
+        },
+        {
+          "cell_x": 1136,
+          "cell_y": 1190
+        },
+        {
+          "cell_x": 1136,
+          "cell_y": 1191
+        },
+        {
+          "cell_x": 1136,
+          "cell_y": 1192
+        },
+        {
+          "cell_x": 1136,
+          "cell_y": 1193
+        },
+        {
+          "cell_x": 1136,
+          "cell_y": 1194
+        },
+        {
+          "cell_x": 1136,
+          "cell_y": 1195
+        },
+        {
+          "cell_x": 1136,
+          "cell_y": 1196
+        },
+        {
+          "cell_x": 1136,
+          "cell_y": 1197
+        },
+        {
+          "cell_x": 1136,
+          "cell_y": 1198
+        },
+        {
+          "cell_x": 1135,
+          "cell_y": 1199
+        },
+        {
+          "cell_x": 1135,
+          "cell_y": 1200
+        },
+        {
+          "cell_x": 1135,
+          "cell_y": 1201
+        },
+        {
+          "cell_x": 1135,
+          "cell_y": 1202
+        },
+        {
+          "cell_x": 1135,
+          "cell_y": 1203
+        },
+        {
+          "cell_x": 1135,
+          "cell_y": 1204
+        },
+        {
+          "cell_x": 1135,
+          "cell_y": 1205
+        },
+        {
+          "cell_x": 1135,
+          "cell_y": 1206
+        },
+        {
+          "cell_x": 1135,
+          "cell_y": 1207
+        },
+        {
+          "cell_x": 1136,
+          "cell_y": 1208
+        },
+        {
+          "cell_x": 1137,
+          "cell_y": 1209
+        },
+        {
+          "cell_x": 1138,
+          "cell_y": 1209
+        },
+        {
+          "cell_x": 1139,
+          "cell_y": 1210
+        },
+        {
+          "cell_x": 1140,
+          "cell_y": 1211
+        },
+        {
+          "cell_x": 1141,
+          "cell_y": 1212
+        },
+        {
+          "cell_x": 1142,
+          "cell_y": 1213
+        },
+        {
+          "cell_x": 1143,
+          "cell_y": 1213
+        },
+        {
+          "cell_x": 1144,
+          "cell_y": 1214
+        },
+        {
+          "cell_x": 1145,
+          "cell_y": 1215
+        },
+        {
+          "cell_x": 1146,
+          "cell_y": 1216
+        },
+        {
+          "cell_x": 1147,
+          "cell_y": 1217
+        },
+        {
+          "cell_x": 1148,
+          "cell_y": 1217
+        },
+        {
+          "cell_x": 1149,
+          "cell_y": 1218
+        },
+        {
+          "cell_x": 1150,
+          "cell_y": 1219
+        },
+        {
+          "cell_x": 1151,
+          "cell_y": 1220
+        },
+        {
+          "cell_x": 1152,
+          "cell_y": 1221
+        },
+        {
+          "cell_x": 1153,
+          "cell_y": 1222
+        },
+        {
+          "cell_x": 1154,
+          "cell_y": 1222
+        },
+        {
+          "cell_x": 1155,
+          "cell_y": 1223
+        },
+        {
+          "cell_x": 1156,
+          "cell_y": 1224
+        },
+        {
+          "cell_x": 1157,
+          "cell_y": 1225
+        },
+        {
+          "cell_x": 1158,
+          "cell_y": 1226
+        },
+        {
+          "cell_x": 1159,
+          "cell_y": 1226
+        },
+        {
+          "cell_x": 1160,
+          "cell_y": 1227
+        },
+        {
+          "cell_x": 1161,
+          "cell_y": 1228
+        },
+        {
+          "cell_x": 1162,
+          "cell_y": 1228
+        },
+        {
+          "cell_x": 1163,
+          "cell_y": 1227
+        },
+        {
+          "cell_x": 1164,
+          "cell_y": 1227
+        },
+        {
+          "cell_x": 1165,
+          "cell_y": 1227
+        },
+        {
+          "cell_x": 1166,
+          "cell_y": 1226
+        },
+        {
+          "cell_x": 1167,
+          "cell_y": 1226
+        },
+        {
+          "cell_x": 1168,
+          "cell_y": 1226
+        },
+        {
+          "cell_x": 1169,
+          "cell_y": 1225
+        },
+        {
+          "cell_x": 1170,
+          "cell_y": 1225
+        },
+        {
+          "cell_x": 1171,
+          "cell_y": 1225
+        },
+        {
+          "cell_x": 1172,
+          "cell_y": 1224
+        },
+        {
+          "cell_x": 1173,
+          "cell_y": 1224
+        },
+        {
+          "cell_x": 1174,
+          "cell_y": 1223
+        },
+        {
+          "cell_x": 1175,
+          "cell_y": 1223
+        },
+        {
+          "cell_x": 1176,
+          "cell_y": 1223
+        },
+        {
+          "cell_x": 1177,
+          "cell_y": 1222
+        },
+        {
+          "cell_x": 1178,
+          "cell_y": 1222
+        },
+        {
+          "cell_x": 1179,
+          "cell_y": 1222
+        },
+        {
+          "cell_x": 1180,
+          "cell_y": 1221
+        },
+        {
+          "cell_x": 1181,
+          "cell_y": 1221
+        },
+        {
+          "cell_x": 1180,
+          "cell_y": 1220
+        },
+        {
+          "cell_x": 1180,
+          "cell_y": 1219
+        },
+        {
+          "cell_x": 1179,
+          "cell_y": 1218
+        },
+        {
+          "cell_x": 1178,
+          "cell_y": 1217
+        },
+        {
+          "cell_x": 1177,
+          "cell_y": 1216
+        },
+        {
+          "cell_x": 1177,
+          "cell_y": 1215
+        },
+        {
+          "cell_x": 1176,
+          "cell_y": 1214
+        },
+        {
+          "cell_x": 1175,
+          "cell_y": 1213
+        },
+        {
+          "cell_x": 1174,
+          "cell_y": 1212
+        },
+        {
+          "cell_x": 1174,
+          "cell_y": 1211
+        },
+        {
+          "cell_x": 1173,
+          "cell_y": 1210
+        },
+        {
+          "cell_x": 1172,
+          "cell_y": 1209
+        },
+        {
+          "cell_x": 1172,
+          "cell_y": 1208
+        },
+        {
+          "cell_x": 1171,
+          "cell_y": 1207
+        },
+        {
+          "cell_x": 1170,
+          "cell_y": 1206
+        },
+        {
+          "cell_x": 1169,
+          "cell_y": 1205
+        },
+        {
+          "cell_x": 1169,
+          "cell_y": 1204
+        },
+        {
+          "cell_x": 1168,
+          "cell_y": 1203
+        },
+        {
+          "cell_x": 1167,
+          "cell_y": 1202
+        },
+        {
+          "cell_x": 1166,
+          "cell_y": 1201
+        },
+        {
+          "cell_x": 1166,
+          "cell_y": 1200
+        },
+        {
+          "cell_x": 1165,
+          "cell_y": 1199
+        },
+        {
+          "cell_x": 1164,
+          "cell_y": 1198
+        },
+        {
+          "cell_x": 1163,
+          "cell_y": 1197
+        },
+        {
+          "cell_x": 1163,
+          "cell_y": 1196
+        },
+        {
+          "cell_x": 1162,
+          "cell_y": 1195
+        },
+        {
+          "cell_x": 1161,
+          "cell_y": 1194
+        },
+        {
+          "cell_x": 1161,
+          "cell_y": 1193
+        },
+        {
+          "cell_x": 1160,
+          "cell_y": 1192
+        },
+        {
+          "cell_x": 1159,
+          "cell_y": 1191
+        },
+        {
+          "cell_x": 1158,
+          "cell_y": 1190
+        },
+        {
+          "cell_x": 1158,
+          "cell_y": 1189
+        },
+        {
+          "cell_x": 1157,
+          "cell_y": 1188
+        },
+        {
+          "cell_x": 1156,
+          "cell_y": 1187
+        },
+        {
+          "cell_x": 1155,
+          "cell_y": 1186
+        },
+        {
+          "cell_x": 1155,
+          "cell_y": 1185
+        },
+        {
+          "cell_x": 1154,
+          "cell_y": 1184
+        }
+      ]
+    }
+  ]
+}

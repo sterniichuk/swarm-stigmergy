@@ -1,0 +1,10 @@
+requests>=2.31.0
+pymavlink>=2.4.37
+rclpy>=3.3.0
+sensor-msgs>=4.2.0
+numpy>=1.19.0,<2.0.0
+pexpect>=4.8.0
+empy==3.3.4
+setuptools
+dronecan
+

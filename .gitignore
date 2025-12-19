@@ -1,0 +1,9 @@
+# Local/generated data snapshots (very large)
+/scripts/data/pheromone_snapshots/
+**/__pycache__/**
+logs/**
+terrain
+*.bin
+*.tlog
+*.raw
+*.parm
