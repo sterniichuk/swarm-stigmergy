@@ -335,6 +335,15 @@ class PythonFastSim(Node):
         # When a target goal is selected during EXPLOIT, hide other targets in RViz.
         self.declare_parameter("exploit_hide_other_targets", True)
 
+        # Baseline comparison modes (ablation studies)
+        # When True, altitude information in danger pheromones is ignored.
+        # Nav_danger exists only in LiDAR, static dangers at 200m, dynamic at cruise altitude.
+        self.declare_parameter("baseline_no_altitude_awareness", False)
+        # When True, explored pheromones are binary (0 or 1) without age/distance quality.
+        self.declare_parameter("baseline_no_explored_gradient", False)
+        # When True, the empty layer is ignored for goal selection (only nav pheromones guide).
+        self.declare_parameter("baseline_no_empty_layer", False)
+
         # EXPLOIT (comparison): dynamic trail -> temporary "static overlay" cost.
         # In "treat dynamic as static", we don't delete dynamic pheromones; instead we add an extra
         # penalty derived from the dynamic trail intensity:
@@ -471,6 +480,7 @@ class PythonFastSim(Node):
         self.declare_parameter("aco_viz_alpha", 0.55)
         self.declare_parameter("aco_viz_line_width", 0.10)
         self.declare_parameter("aco_viz_show_candidates", True)
+        self.declare_parameter("aco_viz_show_far_probes", False)
         self.declare_parameter("aco_viz_top_k", 6)
         self.declare_parameter("aco_viz_ttl_s", 0.75)
         # Lift ACO viz above drone arrows so it stays visible.
@@ -508,6 +518,10 @@ class PythonFastSim(Node):
         self.base_xy = (0.0, 0.0)
         self.t_sim = 0.0
         self._last_wall = time.time()
+        
+        # Mission completion timestamps
+        self.t_all_targets_discovered = None  # When last target was first discovered by ANY drone
+        self.t_mission_complete = None  # When all drones returned to base after finding all targets
 
         # GUI-facing event log (included in /swarm/gui_status).
         self.gui_log: str = ""
@@ -651,6 +665,11 @@ class PythonFastSim(Node):
         self.return_danger_weight = float(self.get_parameter("return_danger_weight").value)
         self.return_corridor_danger_relax = float(self.get_parameter("return_corridor_danger_relax").value)
 
+        # Baseline comparison modes
+        self.baseline_no_altitude_awareness = bool(self.get_parameter("baseline_no_altitude_awareness").value)
+        self.baseline_no_explored_gradient = bool(self.get_parameter("baseline_no_explored_gradient").value)
+        self.baseline_no_empty_layer = bool(self.get_parameter("baseline_no_empty_layer").value)
+
         self.evap_nav_rate = float(self.get_parameter("evap_nav_rate").value)
         self.evap_danger_rate = float(self.get_parameter("evap_danger_rate").value)
         self.wall_danger_evap_mult = float(self.get_parameter("wall_danger_evap_mult").value)
@@ -744,6 +763,10 @@ class PythonFastSim(Node):
             agent.local_a_star_altitude_step_m = float(self.local_a_star_altitude_step_m)
             agent.planning_vertical_cost_mult = float(self.overfly_vertical_cost_mult)
             agent.planning_descend_cost_factor = float(self.overfly_descend_cost_factor)
+            # Baseline comparison modes
+            agent.baseline_no_altitude_awareness = bool(self.baseline_no_altitude_awareness)
+            agent.baseline_no_explored_gradient = bool(self.baseline_no_explored_gradient)
+            agent.baseline_no_empty_layer = bool(self.baseline_no_empty_layer)
             self.drones.append(agent)
 
         # Publishers
@@ -755,6 +778,7 @@ class PythonFastSim(Node):
         self.pub_lidar = self.create_publisher(MarkerArray, "/swarm/markers/lidar", 10)
         self.pub_plan = self.create_publisher(MarkerArray, "/swarm/markers/plan", 10)
         self.pub_aco = self.create_publisher(MarkerArray, "/swarm/markers/aco", 10)
+        self.pub_far_probes = self.create_publisher(MarkerArray, "/swarm/markers/far_probes", 10)
         self.pub_lidar_scan = self.create_publisher(MarkerArray, "/swarm/markers/lidar_scan", 10)
         self.pub_poses = self.create_publisher(PoseArray, "/swarm/drones/poses", 10)
         self.pub_phase = self.create_publisher(String, "/swarm/mission_phase", 10)
@@ -1129,6 +1153,30 @@ class PythonFastSim(Node):
                     self.return_corridor_danger_relax = clamp(float(p.value), 0.0, 1.0)
                 elif name == "return_use_aco_enabled":
                     self.return_use_aco_enabled = bool(p.value)
+                elif name == "baseline_no_altitude_awareness":
+                    self.baseline_no_altitude_awareness = bool(p.value)
+                    # When baseline mode is enabled, disable altitude awareness
+                    for d in self.drones:
+                        try:
+                            d.baseline_no_altitude_awareness = bool(self.baseline_no_altitude_awareness)
+                        except Exception:
+                            pass
+                elif name == "baseline_no_explored_gradient":
+                    self.baseline_no_explored_gradient = bool(p.value)
+                    # When baseline mode is enabled, use binary explored (no age/distance)
+                    for d in self.drones:
+                        try:
+                            d.baseline_no_explored_gradient = bool(self.baseline_no_explored_gradient)
+                        except Exception:
+                            pass
+                elif name == "baseline_no_empty_layer":
+                    self.baseline_no_empty_layer = bool(p.value)
+                    # When baseline mode is enabled, ignore empty layer
+                    for d in self.drones:
+                        try:
+                            d.baseline_no_empty_layer = bool(self.baseline_no_empty_layer)
+                        except Exception:
+                            pass
                 elif name == "drone_altitude_m":
                     self.drone_altitude_m = clamp(float(p.value), -50.0, 500.0)
                     for d in self.drones:
@@ -1363,6 +1411,10 @@ class PythonFastSim(Node):
                 agent.local_a_star_altitude_step_m = float(getattr(self, "local_a_star_altitude_step_m", 0.5))
                 agent.planning_vertical_cost_mult = float(getattr(self, "overfly_vertical_cost_mult", 3.0))
                 agent.planning_descend_cost_factor = float(getattr(self, "overfly_descend_cost_factor", 0.7))
+                # Baseline comparison modes
+                agent.baseline_no_altitude_awareness = bool(getattr(self, "baseline_no_altitude_awareness", False))
+                agent.baseline_no_explored_gradient = bool(getattr(self, "baseline_no_explored_gradient", False))
+                agent.baseline_no_empty_layer = bool(getattr(self, "baseline_no_empty_layer", False))
                 self.drones.append(agent)
                 self.path_hist[uid] = deque(maxlen=max(50, int(self.path_history_len)))
 
@@ -2766,6 +2818,9 @@ class PythonFastSim(Node):
         self.mission_phase = "EXPLORE"
         self.t_sim = 0.0
         self._last_wall = time.time()
+        # Reset mission completion timestamps
+        self.t_all_targets_discovered = None
+        self.t_mission_complete = None
         if not bool(self.get_parameter("keep_base_between_runs").value):
             self.base_map.clear()
         z = float(self.get_parameter("drone_altitude_m").value)
@@ -4103,6 +4158,17 @@ class PythonFastSim(Node):
             active_targets = [t for t in self.targets if math.hypot(float(t.x) - float(self.base_xy[0]), float(t.y) - float(self.base_xy[1])) <= radius + 1e-6]
         else:
             active_targets = list(self.targets)
+        
+        # Track timestamp when all targets were discovered (regardless of drone knowledge/return)
+        try:
+            if self.t_all_targets_discovered is None and len(active_targets) > 0:
+                all_discovered = all(bool(t.is_found()) for t in active_targets)
+                if all_discovered:
+                    self.t_all_targets_discovered = float(t_ref)
+                    self.get_logger().info(f"[MILESTONE] All targets discovered at t={self.t_all_targets_discovered:.2f}s")
+        except Exception:
+            pass
+        
         # IMPORTANT: no global "all targets found => everyone returns" logic.
         # Each drone decides to return based on its OWN communicated target knowledge.
         # (Inspector exception: it may recharge, but resumes inspection until trajectory is complete.)
@@ -4131,9 +4197,22 @@ class PythonFastSim(Node):
                 )
                 all_idle = all(str(getattr(d.s, "mode", "") or "") == "IDLE" for d in self.drones)
                 if all_found and all_at_base2 and all_idle and str(getattr(self, "mission_phase", "") or "").upper() != "EXPLOIT":
+                    # Track mission complete timestamp
+                    if self.t_mission_complete is None:
+                        self.t_mission_complete = float(t_ref)
+                        self.get_logger().info(f"[MILESTONE] Mission complete (all drones at base) at t={self.t_mission_complete:.2f}s")
+                        if self.t_all_targets_discovered is not None:
+                            delta = self.t_mission_complete - self.t_all_targets_discovered
+                            self.get_logger().info(f"[MILESTONE] Time from last discovery to mission complete: {delta:.2f}s")
+                    
                     self.running = False
                     self.paused = True
-                    self.gui_log = "Explore complete: all targets found and all drones at base/idle; time frozen (paused)"
+                    log_parts = ["Explore complete: all targets found and all drones at base/idle; time frozen (paused)"]
+                    if self.t_all_targets_discovered is not None:
+                        log_parts.append(f"Discovery: {self.t_all_targets_discovered:.1f}s")
+                    if self.t_mission_complete is not None:
+                        log_parts.append(f"Complete: {self.t_mission_complete:.1f}s")
+                    self.gui_log = " | ".join(log_parts)
         except Exception:
             pass
 
@@ -4349,6 +4428,9 @@ class PythonFastSim(Node):
             "vertical_speed_mult_enabled": bool(v_mult_enabled),
             "vertical_speed_mult": float(v_mult),
             "max_vertical_speed_mps": float(max_v),
+            # Mission completion timestamps
+            "t_all_targets_discovered": float(self.t_all_targets_discovered) if self.t_all_targets_discovered is not None else None,
+            "t_mission_complete": float(self.t_mission_complete) if self.t_mission_complete is not None else None,
         }
         # Exploit-run per-drone stats (only populated for GUI-initiated exploit runs).
         try:
@@ -5668,23 +5750,49 @@ class PythonFastSim(Node):
                         rays.id = 11000 + int(agent_i)
                         rays.type = Marker.LINE_LIST
                         rays.action = Marker.ADD
-                        rays.scale.x = float(max(0.01, w))
-                        rays.color.r = 0.85
-                        rays.color.g = 0.85
-                        rays.color.b = 0.85
-                        rays.color.a = float(clamp(alpha * 0.55, 0.0, 1.0))
+                        # Match the scale (width) and length mult of the main arrow for consistency.
+                        rays.scale.x = float(arrow_w)
+
+                        scores = [float(s) for (s, _v) in cands_sorted]
+                        s_min = min(scores) if scores else 0.0
+                        s_max = max(scores) if scores else 1.0
+                        den = (s_max - s_min) if abs(s_max - s_min) > 1e-9 else 1.0
+
                         rays.points = []
+                        rays.colors = []
                         p0 = Point()
                         p0.x = float(agent.s.x)
                         p0.y = float(agent.s.y)
                         p0.z = float(z)
-                        for _score, (nx, ny, _yaw) in cands_sorted:
+                        for s, (nx, ny, _yaw) in cands_sorted:
+                            nn = (float(s) - float(s_min)) / float(den)
+                            nn = clamp(nn, 0.0, 1.0)
+
                             p1 = Point()
-                            p1.x = float(nx)
-                            p1.y = float(ny)
+                            # Scale the ray length to match the main arrow's visual length
+                            dx = float(nx) - float(agent.s.x)
+                            dy = float(ny) - float(agent.s.y)
+                            p1.x = float(agent.s.x) + dx * float(arrow_len_mult)
+                            p1.y = float(agent.s.y) + dy * float(arrow_len_mult)
                             p1.z = float(z)
                             rays.points.append(p0)
                             rays.points.append(p1)
+
+                            col = ColorRGBA()
+                            # Red (1,0,0) -> Yellow (1,1,0) -> Green (0,1,0) gradient
+                            if nn < 0.5:
+                                n2 = nn * 2.0
+                                col.r = 1.0
+                                col.g = float(n2)
+                                col.b = 0.0
+                            else:
+                                n2 = (nn - 0.5) * 2.0
+                                col.r = float(1.0 - n2)
+                                col.g = 1.0
+                                col.b = 0.0
+                            col.a = float(clamp(alpha * 0.8, 0.0, 1.0))
+                            rays.colors.append(col)
+                            rays.colors.append(col)
                         if rays.points:
                             # If the selection changes (single->all), let old rays expire.
                             rays.lifetime.sec = int(ttl_s)
@@ -5835,6 +5943,74 @@ class PythonFastSim(Node):
                 _add_aco_for_agent(seq)
         self.pub_aco.publish(am)
         rviz_marker_count += len(am.markers)
+
+        # Strategic Planning / Far-Vision Probes visualization
+        fm = MarkerArray()
+        far_enabled = bool(self.get_parameter("aco_viz_show_far_probes").value)
+        # Clear if disabled
+        if (not far_enabled) and bool(getattr(self, "_far_viz_prev_enabled", False)):
+            delf = Marker()
+            delf.action = Marker.DELETEALL
+            delf.header.frame_id = "world"
+            fm.markers.append(delf)
+        self._far_viz_prev_enabled = bool(far_enabled)
+
+        if far_enabled:
+            # Match the same drone selection logic as ACO arrows
+            sel_seq = int(self.get_parameter("aco_viz_drone_seq").value)
+            ttl_s = float(max(0.05, float(self.get_parameter("aco_viz_ttl_s").value)))
+            t_sim_now = float(getattr(self, "t_sim", 0.0))
+            
+            def _add_far_for_agent(agent_i: int):
+                try:
+                    agent = self.drones[agent_i - 1]
+                except Exception:
+                    return
+                probes = list(getattr(agent, "last_far_probes", []) or [])
+                if not probes:
+                    return
+                try:
+                    if (t_sim_now - float(getattr(agent, "last_far_probes_t", -1e9))) > float(ttl_s):
+                        return
+                except Exception:
+                    pass
+
+                m = Marker()
+                m.header.frame_id = "world"
+                m.header.stamp = now_msg
+                m.ns = f"swarm_far_probes_{int(agent_i)}"
+                m.id = 40000 + int(agent_i)
+                m.type = Marker.CUBE_LIST
+                m.action = Marker.ADD
+                m.scale.x = float(self.grid.cell_size_m)
+                m.scale.y = float(self.grid.cell_size_m)
+                m.scale.z = 0.15
+                m.color.r = 1.0
+                m.color.g = 1.0
+                m.color.b = 1.0
+                m.color.a = 0.35  # semi-transparent white
+                m.lifetime.sec = int(ttl_s)
+                m.lifetime.nanosec = int((ttl_s - int(ttl_s)) * 1e9)
+                
+                m.points = []
+                for cx, cy in probes:
+                    wx, wy = self.grid.cell_to_world(cx, cy)
+                    p = Point()
+                    p.x = float(wx)
+                    p.y = float(wy)
+                    p.z = float(agent.s.z) - 0.1 # slightly below drone
+                    m.points.append(p)
+                fm.markers.append(m)
+
+            if sel_seq == 0:
+                for agent_i in range(1, int(self.num_py) + 1):
+                    _add_far_for_agent(agent_i)
+            else:
+                _add_far_for_agent(sel_seq)
+
+        self.pub_far_probes.publish(fm)
+        rviz_marker_count += len(fm.markers)
+
         try:
             for mm in am.markers:
                 rviz_point_count += len(getattr(mm, "points", []) or [])

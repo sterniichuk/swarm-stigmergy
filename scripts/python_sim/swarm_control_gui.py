@@ -882,6 +882,11 @@ def _main_qt(argv, QtCore, QtWidgets):
     lbl_targets = QtWidgets.QLabel("Targets: —")
     lbl_targets.setStyleSheet("font-size: 13px; font-weight: 600;")
     status_layout.addWidget(lbl_targets)
+    # Mission completion timestamps
+    lbl_timestamps = QtWidgets.QLabel("")
+    lbl_timestamps.setStyleSheet("font-size: 11px; color: #666;")
+    lbl_timestamps.setWordWrap(True)
+    status_layout.addWidget(lbl_timestamps)
     txt_drones = QtWidgets.QPlainTextEdit()
     txt_drones.setReadOnly(True)
     txt_drones.setPlaceholderText("Drones missing target knowledge / not found targets will appear here.")
@@ -1284,6 +1289,61 @@ def _main_qt(argv, QtCore, QtWidgets):
     chk_far_excl.setToolTip("Ignore kernel cells closer than ring X to the drone (frontier-only).")
     far_layout.addWidget(chk_far_excl)
     aco_layout.addWidget(far_box)
+
+    # Baseline comparison modes (ablation studies)
+    baseline_box = _QtCollapsibleSection(
+        "Baseline comparison modes",
+        "qt_section_baseline_collapsed",
+        default_expanded=False,
+    )
+    baseline_box.setToolTip(
+        "Enable baseline/ablation modes to compare against the full system.\n"
+        "These modes intentionally remove context to measure specific contributions."
+    )
+    baseline_layout = QtWidgets.QVBoxLayout(baseline_box.body)
+    
+    # No altitude awareness checkbox
+    chk_baseline_no_altitude = QtWidgets.QCheckBox(
+        "No altitude awareness: Dangers at fixed altitudes"
+    )
+    chk_baseline_no_altitude.setChecked(False)
+    chk_baseline_no_altitude.setToolTip(
+        "When enabled, altitude metadata is ignored:\n"
+        "- Nav_danger (LiDAR walls): Only visible through real-time LiDAR (no pheromone trail)\n"
+        "- Static dangers: Treated as if at 200m altitude (must avoid horizontally)\n"
+        "- Dynamic dangers: Treated at drone's current cruise altitude\n"
+        "Disables overfly logic; drones only learn heights through LiDAR."
+    )
+    baseline_layout.addWidget(chk_baseline_no_altitude)
+    
+    # No gradient explored layer checkbox
+    chk_baseline_no_explored_gradient = QtWidgets.QCheckBox(
+        "No explored gradient: Binary explored layer (no age/distance quality)"
+    )
+    chk_baseline_no_explored_gradient.setChecked(False)
+    chk_baseline_no_explored_gradient.setToolTip(
+        "When enabled, explored pheromones are binary (0 or 1).\n"
+        "Drones know IF an area was explored, but not HOW WELL:\n"
+        "- No age-based decay (old observations = fresh observations)\n"
+        "- No distance discount (far observations = close observations)\n"
+        "Measures the value of exploration quality metadata."
+    )
+    baseline_layout.addWidget(chk_baseline_no_explored_gradient)
+    
+    # No empty layer checkbox
+    chk_baseline_no_empty = QtWidgets.QCheckBox(
+        "No empty layer: Only navigation pheromones for path guidance"
+    )
+    chk_baseline_no_empty.setChecked(False)
+    chk_baseline_no_empty.setToolTip(
+        "When enabled, the 'empty' pheromone layer is ignored.\n"
+        "Drones don't use confirmed-safe-space information for goal selection.\n"
+        "Only navigation pheromones (paths taken by others) guide movement.\n"
+        "Measures the value of shared safe-space knowledge."
+    )
+    baseline_layout.addWidget(chk_baseline_no_empty)
+    
+    aco_layout.addWidget(baseline_box)
 
     # evaporation (pheromone behavior)
     row_evap = QtWidgets.QHBoxLayout()
@@ -1792,6 +1852,28 @@ def _main_qt(argv, QtCore, QtWidgets):
     chk_aco_all.setChecked(False)
     chk_aco_all.setToolTip("When enabled, shows ACO decisions for all drones at once.")
     lidar_layout.addWidget(chk_aco_all)
+
+    chk_aco_cands = QtWidgets.QCheckBox("Show all ACO vectors (candidates) (/swarm/markers/aco)")
+    chk_aco_cands.setChecked(True)
+    chk_aco_cands.setToolTip("When enabled, shows multiple candidate directions evaluated by ACO.")
+    lidar_layout.addWidget(chk_aco_cands)
+
+    row_aco_k = QtWidgets.QHBoxLayout()
+    row_aco_k.addWidget(QtWidgets.QLabel("Top-K candidates:"))
+    spin_aco_k = QtWidgets.QSpinBox()
+    spin_aco_k.setMinimum(1)
+    spin_aco_k.setMaximum(24)
+    spin_aco_k.setValue(8)
+    spin_aco_k.setToolTip("Number of top-scoring ACO candidates to visualize as rays.")
+    row_aco_k.addWidget(spin_aco_k)
+    row_aco_k.addStretch(1)
+    lidar_layout.addLayout(row_aco_k)
+
+    chk_aco_far = QtWidgets.QCheckBox("Show Far-Vision Probes (/swarm/markers/far_probes)")
+    chk_aco_far.setChecked(False)
+    chk_aco_far.setToolTip("Visualize the cells checked by the 'Strategic Planning' (Far-Ring Probes) mechanism.")
+    lidar_layout.addWidget(chk_aco_far)
+
     # ACO arrow tuning
     row_aco_arrow = QtWidgets.QHBoxLayout()
     row_aco_arrow.addWidget(QtWidgets.QLabel("ACO arrow width (m):"))
@@ -1979,6 +2061,16 @@ def _main_qt(argv, QtCore, QtWidgets):
     spin_ins_k.valueChanged.connect(lambda _v: _on_danger_inspect())
     spin_ins_thr.valueChanged.connect(lambda _v: _on_danger_inspect())
     spin_ins_max.valueChanged.connect(lambda _v: _on_danger_inspect())
+
+    def _on_baseline_modes(_v=None):
+        """Handler for baseline/ablation mode checkboxes."""
+        _set_fast_sim_param_bool("baseline_no_altitude_awareness", bool(chk_baseline_no_altitude.isChecked()))
+        _set_fast_sim_param_bool("baseline_no_explored_gradient", bool(chk_baseline_no_explored_gradient.isChecked()))
+        _set_fast_sim_param_bool("baseline_no_empty_layer", bool(chk_baseline_no_empty.isChecked()))
+
+    chk_baseline_no_altitude.stateChanged.connect(lambda _v: _on_baseline_modes())
+    chk_baseline_no_explored_gradient.stateChanged.connect(lambda _v: _on_baseline_modes())
+    chk_baseline_no_empty.stateChanged.connect(lambda _v: _on_baseline_modes())
 
     # Inspector (dynamic danger)
     insp_box = _QtCollapsibleSection("Inspector (dynamic danger)", "qt_section_inspector_collapsed", default_expanded=False)
@@ -2604,6 +2696,9 @@ def _main_qt(argv, QtCore, QtWidgets):
             node.set_aco_viz(bool(chk_aco.isChecked()), int(spin_lidar_drone.value()))
         # ACO arrow params are parameters on the sim node (same process), so set directly.
         try:
+            _set_fast_sim_param_bool("aco_viz_show_candidates", bool(chk_aco_cands.isChecked()))
+            _set_fast_sim_param_bool("aco_viz_show_far_probes", bool(chk_aco_far.isChecked()))
+            _set_fast_sim_param_int("aco_viz_top_k", int(spin_aco_k.value()))
             _set_fast_sim_param_double("aco_viz_arrow_width_m", float(spin_aco_w.value()))
             _set_fast_sim_param_double("aco_viz_arrow_length_mult", float(spin_aco_len.value()))
             _set_fast_sim_param_bool("aco_commit_enabled", bool(chk_aco_commit.isChecked()))
@@ -2639,6 +2734,9 @@ def _main_qt(argv, QtCore, QtWidgets):
     chk_plan_all.stateChanged.connect(lambda _v: _publish_lidar_viz())
     chk_aco.stateChanged.connect(lambda _v: _publish_lidar_viz())
     chk_aco_all.stateChanged.connect(lambda _v: _publish_lidar_viz())
+    chk_aco_cands.stateChanged.connect(lambda _v: _publish_lidar_viz())
+    chk_aco_far.stateChanged.connect(lambda _v: _publish_lidar_viz())
+    spin_aco_k.valueChanged.connect(lambda _v: _publish_lidar_viz())
     spin_aco_w.valueChanged.connect(lambda _v: _publish_lidar_viz())
     spin_aco_len.valueChanged.connect(lambda _v: _publish_lidar_viz())
     chk_aco_commit.stateChanged.connect(lambda _v: _publish_lidar_viz())
@@ -2696,6 +2794,19 @@ def _main_qt(argv, QtCore, QtWidgets):
             tu = int(st.get("targets_unfound", 0))
             tt = int(st.get("targets_total", tf + tu))
             lbl_targets.setText(f"Targets: found {tf} / {tt}   (unfound: {tu})")
+            
+            # Display mission completion timestamps
+            t_discovered = st.get("t_all_targets_discovered")
+            t_complete = st.get("t_mission_complete")
+            timestamp_parts = []
+            if t_discovered is not None:
+                timestamp_parts.append(f"All discovered: {t_discovered:.1f}s")
+            if t_complete is not None:
+                timestamp_parts.append(f"Mission complete: {t_complete:.1f}s")
+                if t_discovered is not None:
+                    delta = t_complete - t_discovered
+                    timestamp_parts.append(f"(Δ: {delta:.1f}s)")
+            lbl_timestamps.setText(" | ".join(timestamp_parts) if timestamp_parts else "")
 
             # Refresh exploit target list from gui_status targets.
             try:
@@ -2842,6 +2953,7 @@ def _main_qt(argv, QtCore, QtWidgets):
 
         else:
             lbl_targets.setText("Targets: —")
+            lbl_timestamps.setText("")
             lbl_log.setText(node.latest_log or "—")
             try:
                 if not bool(exploit_stats_state.get("frozen")):
@@ -2985,6 +3097,10 @@ def _main_qt(argv, QtCore, QtWidgets):
         chk_far_excl.setChecked(bool(settings.get("explore_far_density_exclude_inside_ring", chk_far_excl.isChecked())))
         spin_vec_avoid.setValue(float(settings.get("explore_vector_avoid_weight", spin_vec_avoid.value())))
         spin_vec_share_cells.setValue(int(settings.get("explore_vector_share_every_cells", spin_vec_share_cells.value())))
+        # Baseline comparison modes
+        chk_baseline_no_altitude.setChecked(bool(settings.get("baseline_no_altitude_awareness", chk_baseline_no_altitude.isChecked())))
+        chk_baseline_no_explored_gradient.setChecked(bool(settings.get("baseline_no_explored_gradient", chk_baseline_no_explored_gradient.isChecked())))
+        chk_baseline_no_empty.setChecked(bool(settings.get("baseline_no_empty_layer", chk_baseline_no_empty.isChecked())))
         spin_evap_nav.setValue(float(settings.get("evap_nav_rate", spin_evap_nav.value())))
         spin_evap_danger.setValue(float(settings.get("evap_danger_rate", spin_evap_danger.value())))
         spin_danger_mult_static.setValue(float(settings.get("danger_evap_mult_static", spin_danger_mult_static.value())))
@@ -3005,6 +3121,9 @@ def _main_qt(argv, QtCore, QtWidgets):
         chk_plan_all.setChecked(bool(settings.get("plan_viz_all_enabled", chk_plan_all.isChecked())))
         chk_aco.setChecked(bool(settings.get("aco_viz_enabled", chk_aco.isChecked())))
         chk_aco_all.setChecked(bool(settings.get("aco_viz_all_enabled", chk_aco_all.isChecked())))
+        chk_aco_cands.setChecked(bool(settings.get("aco_viz_show_candidates", chk_aco_cands.isChecked())))
+        chk_aco_far.setChecked(bool(settings.get("aco_viz_show_far_probes", chk_aco_far.isChecked())))
+        spin_aco_k.setValue(int(settings.get("aco_viz_top_k", spin_aco_k.value())))
         spin_aco_w.setValue(float(settings.get("aco_viz_arrow_width_m", spin_aco_w.value())))
         spin_aco_len.setValue(float(settings.get("aco_viz_arrow_length_mult", spin_aco_len.value())))
         chk_aco_commit.setChecked(bool(settings.get("aco_commit_enabled", chk_aco_commit.isChecked())))
@@ -3103,6 +3222,10 @@ def _main_qt(argv, QtCore, QtWidgets):
     chk_far_excl.stateChanged.connect(lambda _v: _mark_dirty())
     spin_vec_avoid.valueChanged.connect(lambda _v: _mark_dirty())
     spin_vec_share_cells.valueChanged.connect(lambda _v: _mark_dirty())
+    # Baseline comparison modes
+    chk_baseline_no_altitude.stateChanged.connect(lambda _v: _mark_dirty())
+    chk_baseline_no_explored_gradient.stateChanged.connect(lambda _v: _mark_dirty())
+    chk_baseline_no_empty.stateChanged.connect(lambda _v: _mark_dirty())
     spin_evap_nav.valueChanged.connect(lambda _v: _mark_dirty())
     spin_evap_danger.valueChanged.connect(lambda _v: _mark_dirty())
     spin_danger_mult_static.valueChanged.connect(lambda _v: _mark_dirty())
@@ -3122,6 +3245,9 @@ def _main_qt(argv, QtCore, QtWidgets):
     chk_plan_all.stateChanged.connect(lambda _v: _mark_dirty())
     chk_aco.stateChanged.connect(lambda _v: _mark_dirty())
     chk_aco_all.stateChanged.connect(lambda _v: _mark_dirty())
+    chk_aco_cands.stateChanged.connect(lambda _v: _mark_dirty())
+    chk_aco_far.stateChanged.connect(lambda _v: _mark_dirty())
+    spin_aco_k.valueChanged.connect(lambda _v: _mark_dirty())
     spin_aco_w.valueChanged.connect(lambda _v: _mark_dirty())
     spin_aco_len.valueChanged.connect(lambda _v: _mark_dirty())
     chk_aco_commit.stateChanged.connect(lambda _v: _mark_dirty())
@@ -3200,6 +3326,10 @@ def _main_qt(argv, QtCore, QtWidgets):
             "explore_far_density_exclude_inside_ring": bool(chk_far_excl.isChecked()),
             "explore_vector_avoid_weight": float(spin_vec_avoid.value()),
             "explore_vector_share_every_cells": int(spin_vec_share_cells.value()),
+            # Baseline comparison modes
+            "baseline_no_altitude_awareness": bool(chk_baseline_no_altitude.isChecked()),
+            "baseline_no_explored_gradient": bool(chk_baseline_no_explored_gradient.isChecked()),
+            "baseline_no_empty_layer": bool(chk_baseline_no_empty.isChecked()),
             "evap_nav_rate": float(spin_evap_nav.value()),
             "evap_danger_rate": float(spin_evap_danger.value()),
             "danger_evap_mult_static": float(spin_danger_mult_static.value()),
@@ -3220,6 +3350,9 @@ def _main_qt(argv, QtCore, QtWidgets):
             "plan_viz_all_enabled": bool(chk_plan_all.isChecked()),
             "aco_viz_enabled": bool(chk_aco.isChecked()),
             "aco_viz_all_enabled": bool(chk_aco_all.isChecked()),
+            "aco_viz_show_candidates": bool(chk_aco_cands.isChecked()),
+            "aco_viz_show_far_probes": bool(chk_aco_far.isChecked()),
+            "aco_viz_top_k": int(spin_aco_k.value()),
             "aco_viz_arrow_width_m": float(spin_aco_w.value()),
             "aco_viz_arrow_length_mult": float(spin_aco_len.value()),
             "aco_commit_enabled": bool(chk_aco_commit.isChecked()),
@@ -3247,6 +3380,7 @@ def _main_qt(argv, QtCore, QtWidgets):
             "qt_section_aco_collapsed": bool(aco_box.is_collapsed()),
             "qt_section_danger_inspection_collapsed": bool(inspect_box.is_collapsed()),
             "qt_section_far_density_collapsed": bool(far_box.is_collapsed()),
+            "qt_section_baseline_collapsed": bool(baseline_box.is_collapsed()),
             "qt_section_inspector_collapsed": bool(insp_box.is_collapsed()),
             "qt_section_pheromone_viz_collapsed": bool(pher_box.is_collapsed()),
             "qt_section_drones_viz_collapsed": bool(drones_box.is_collapsed()),

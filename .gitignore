@@ -7,3 +7,7 @@ terrain
 *.tlog
 *.raw
 *.parm
+.idea/**
+.venv/**
+.vscode/**
+BASELINE_MODES.md

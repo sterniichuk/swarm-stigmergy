@@ -12,7 +12,6 @@ Panels:
         - /Marker1/Topic1
         - /Drone2 marker1/Topic1
         - /Drone3 marker1/Topic1
-        - /pheromone_heatmap1
         - /pheromone_heatmap1/Topic1
         - /pheromone_heatmap1/Namespaces1
         - /Drone1 path1/Topic1
@@ -192,10 +191,12 @@ Visualization Manager:
         Value: /drone2/path_markers
       Value: false
     - Class: rviz_default_plugins/Marker
-      Enabled: false
+      Enabled: true
       Name: Danger_MAP
       Namespaces:
-        {}
+        danger_map: true
+        danger_map_dyn_path: true
+        danger_map_dyn_speed: true
       Topic:
         Depth: 5
         Durability Policy: Volatile
@@ -203,7 +204,7 @@ Visualization Manager:
         History Policy: Keep Last
         Reliability Policy: Reliable
         Value: /danger_map
-      Value: false
+      Value: true
     - Class: rviz_default_plugins/MarkerArray
       Enabled: true
       Name: Targets
@@ -280,17 +281,17 @@ Visualization Manager:
         Value: /swarm/markers/lidar
       Value: false
     - Class: rviz_default_plugins/MarkerArray
-      Enabled: false
+      Enabled: true
       Name: Swarm paths
       Namespaces:
-        {}
+        swarm_paths: true
       Topic:
         Depth: 5
         Durability Policy: Volatile
         History Policy: Keep Last
         Reliability Policy: Reliable
         Value: /swarm/markers/paths
-      Value: false
+      Value: true
     - Class: rviz_default_plugins/MarkerArray
       Enabled: false
       Name: Lidar scan
@@ -331,7 +332,6 @@ Visualization Manager:
       Enabled: true
       Name: ACO decision making
       Namespaces:
-        swarm_aco_candidates: true
         swarm_aco_choice: true
       Topic:
         Depth: 5
@@ -352,6 +352,18 @@ Visualization Manager:
         History Policy: Keep Last
         Reliability Policy: Reliable
         Value: /swarm/markers/exploration_radius
+      Value: true
+    - Class: rviz_default_plugins/MarkerArray
+      Enabled: true
+      Name: MarkerArray
+      Namespaces:
+        {}
+      Topic:
+        Depth: 5
+        Durability Policy: Volatile
+        History Policy: Keep Last
+        Reliability Policy: Reliable
+        Value: /swarm/markers/far_probes
       Value: true
   Enabled: true
   Global Options:
@@ -399,25 +411,25 @@ Visualization Manager:
   Views:
     Current:
       Class: rviz_default_plugins/XYOrbit
-      Distance: 1960.2930908203125
+      Distance: 1874.0633544921875
       Enable Stereo Rendering:
         Stereo Eye Separation: 0.05999999865889549
         Stereo Focal Distance: 1
         Swap Stereo Eyes: false
         Value: false
       Focal Point:
-        X: 165.25051879882812
-        Y: 641.4965209960938
+        X: -10.390380859375
+        Y: -45.83447265625
         Z: 0
       Focal Shape Fixed Size: true
       Focal Shape Size: 0.05000000074505806
       Invert Z Axis: false
       Name: Current View
       Near Clip Distance: 0.009999999776482582
-      Pitch: 0.7484164237976074
+      Pitch: 0.5815073251724243
       Target Frame: <Fixed Frame>
       Value: XYOrbit (rviz_default_plugins)
-      Yaw: 0.8865792751312256
+      Yaw: 4.76425838470459
     Saved:
       - Class: rviz_default_plugins/Orbit
         Distance: 10

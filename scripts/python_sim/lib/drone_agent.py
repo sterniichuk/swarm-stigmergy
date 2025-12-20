@@ -8,6 +8,7 @@ from collections import deque
 from scripts.python_sim.dto.pheromones import PheromoneMap
 from scripts.python_sim.dto.sim_types import (
     DroneState, 
+    DroneConfig,
     EnergyModel, 
     ExploreVector, 
     GridSpec, 
@@ -26,6 +27,7 @@ class PythonDrone:
         pher: PheromoneMap,
         energy: EnergyModel,
         rng: random.Random,
+        config: Optional[DroneConfig] = None,
     ):
         """
         Initialize a PythonDrone agent.
@@ -46,12 +48,14 @@ class PythonDrone:
             pher (PheromoneMap): Shared or local pheromone map.
             energy (EnergyModel): Model for energy consumption.
             rng (random.Random): Random number generator for stochastic behaviors.
+            config (Optional[DroneConfig]): Configuration parameters for drone behavior.
         """
         self.s = state
         self.grid = grid
         self.pher = pher
         self.energy = energy
         self.rng = rng
+        self.config = config if config is not None else DroneConfig()
         # knowledge: unknown/free/occupied (stored sparsely; unknown default)
         self.known_free: Dict[Tuple[int, int], bool] = {}
         self.known_occ: Dict[Tuple[int, int], bool] = {}
@@ -66,6 +70,9 @@ class PythonDrone:
         self.last_aco_choice_t: float = -1e9
         # Candidate headings from the last ACO scoring pass: list of (score, (nx,ny,yaw)).
         self.last_aco_candidates: List[Tuple[float, Tuple[float, float, float]]] = []
+        # Far-ring probes (cells checked by Strategic Planning): list of (cx, cy).
+        self.last_far_probes: List[Tuple[int, int]] = []
+        self.last_far_probes_t: float = -1e9
         # Committed local plan (prevents oscillation between similar A* solutions).
         self._active_plan_world: List[Tuple[float, float]] = []
         self._active_plan_idx: int = 0
@@ -129,8 +136,8 @@ class PythonDrone:
                 dy = cy - int(fy)
                 if (dx * dx + dy * dy) <= int(rad2):
                     return True
-        except Exception:
-            return False
+        except Exception as e:
+            print(f"[DroneAgent] Error checking dynamic blocked cell: {e}")
         return False
 
     @staticmethod
@@ -237,8 +244,8 @@ class PythonDrone:
                 self._mark_dyn_kernel_done(did, float(t))
                 self.s.dynamic_inspect_active_id = ""
                 self.s.dynamic_inspect_skip_ids.add(str(did))
-        except Exception:
-            pass
+        except Exception as e:
+            print(f"[DroneAgent] Error marking dynamic kernel as complete: {e}")
 
     def _mark_dyn_kernel_done(self, danger_id: str, t: float):
         """
@@ -280,7 +287,8 @@ class PythonDrone:
                 meta.kind = f"danger_dyn_kernel_done:{did}"
                 meta.t = float(max(float(meta.t), float(t)))
                 self.pher.danger.set(tuple(cc), v, meta)
-            except Exception:
+            except Exception as e:
+                print(f"[DroneAgent] Error marking kernel cell done: {e}")
                 continue
 
     def distance_to(self, x: float, y: float) -> float:
@@ -397,8 +405,8 @@ class PythonDrone:
                         return True
                     if float(self.s.z) < float(alt) - 1e-6:
                         return True
-        except Exception:
-            pass
+        except Exception as e:
+            print(f"[DroneAgent] Error checking nav danger altitude: {e}")
         if c in self.known_occ:
             # Altitude-aware override: a cell marked occupied at low altitude should become traversable
             # once the drone is high enough that the building is no longer an obstacle at (x,y,z).
@@ -458,6 +466,8 @@ class PythonDrone:
         # - Static threats (danger_static) can be "overflown": if our planned altitude is above the
         #   danger altitude, treat them as non-blocking (no extra safety margin like buildings).
         # - Dynamic threats are treated like other drones: altitude doesn't "solve" them; keep cost.
+        # BASELINE MODE: if baseline_no_altitude_awareness is enabled, use fixed altitudes instead
+        baseline_no_alt = self.config.baseline_no_altitude_awareness
         try:
             if danger_tau > 1e-9:
                 mk = self.pher.danger.meta.get(c)
@@ -468,52 +478,81 @@ class PythonDrone:
                     z_eff = float(self.s.z) if z_eff_override is None else float(z_eff_override)
                     if z_eff_override is None:
                         # When overflying/hopping we plan for the target altitude (not the instantaneous z).
-                        if bool(getattr(self.s, "overfly_active", False)) or bool(getattr(self.s, "hop_active", False)):
-                            try:
-                                z_eff = max(z_eff, float(getattr(self.s, "z_target", z_eff)))
-                            except Exception:
-                                pass
-                    # Dynamic danger pheromone trails:
-                    # - default (dynamic-aware): informational only; ignore in planning cost
-                    # - ablation (treat dynamic as static): make A* route around the trail by *increasing* its cost
-                    if k.startswith("danger_dyn_"):
-                        treat_static = bool(getattr(self, "_dyn_trail_static_for_planning", False))
-                        if not treat_static:
-                            danger_tau = 0.0
-                        else:
-                            # "Temporary static overlay": amplify high (red) values more than low (green) ones.
-                            # overlay = strength * (danger_tau ^ gamma)
-                            strength = float(getattr(self, "_dyn_trail_overlay_strength", 3.0))
-                            gamma = float(getattr(self, "_dyn_trail_overlay_gamma", 1.8))
-                            strength = max(0.0, strength)
-                            gamma = max(0.5, gamma)
-                            overlay = float(strength) * (float(max(0.0, danger_tau)) ** float(gamma))
-                            danger_tau = float(danger_tau) + float(overlay)
-                            # When we explicitly "treat dynamic danger as static", allow overfly behavior:
-                            # if our effective planned altitude is above the stored threat altitude, do not penalize.
-                            alt_dyn = getattr(mk, "alt_m", None)
-                            if alt_dyn is not None:
-                                if float(z_eff) >= float(alt_dyn) - 1e-6:
-                                    danger_tau = 0.0
-                                else:
-                                    # Penalize altitude violation proportionally to how far below the required altitude we are.
-                                    dz = max(0.0, float(alt_dyn) - float(z_eff))
-                                    frac = float(dz) / max(1.0, float(alt_dyn))
-                                    w = float(getattr(self, "static_danger_altitude_violation_weight", 0.0))
-                                    if w > 1e-9 and frac > 1e-9:
-                                        danger_tau = float(danger_tau) + float(w) * float(frac)
-                    if k.startswith("danger_static") and (getattr(mk, "alt_m", None) is not None):
-                        if float(z_eff) >= float(getattr(mk, "alt_m")) - 1e-6:
-                            danger_tau = 0.0
-                        else:
-                            # Penalize altitude violation proportionally to deficit.
-                            alt_req = float(getattr(mk, "alt_m"))
-                            dz = max(0.0, alt_req - float(z_eff))
-                            frac = float(dz) / max(1.0, alt_req)
-                            w = float(getattr(self, "static_danger_altitude_violation_weight", 0.0))
-                            if w > 1e-9 and frac > 1e-9:
-                                danger_tau = float(danger_tau) + float(w) * float(frac)
-        except Exception:
+                        if self.s.overfly_active or self.s.hop_active:
+                            z_eff = max(z_eff, self.s.z_target)
+                    
+                    # BASELINE MODE: Replace actual altitudes with fixed values
+                    if baseline_no_alt:
+                        # Nav_danger: Should only exist in real-time LiDAR (skip pheromone entirely in baseline)
+                        if k == "nav_danger" or k.startswith("nav_danger"):
+                            danger_tau = 0.0  # Ignore nav_danger pheromones in baseline
+                        # Static dangers: Treat as if at 200m altitude (must avoid horizontally)
+                        elif k.startswith("danger_static"):
+                            fixed_alt = 200.0
+                            if float(z_eff) >= fixed_alt - 1e-6:
+                                danger_tau = 0.0
+                            else:
+                                # Penalize being below the fixed altitude
+                                dz = max(0.0, fixed_alt - float(z_eff))
+                                frac = float(dz) / max(1.0, fixed_alt)
+                                w = self.config.static_danger_altitude_violation_weight
+                                if w > 1e-9 and frac > 1e-9:
+                                    danger_tau = float(danger_tau) + float(w) * float(frac)
+                        # Dynamic dangers: Treat at drone's cruise altitude
+                        elif k.startswith("danger_dyn_"):
+                            cruise_alt = float(getattr(self.s, "z_cruise", 8.0))
+                            if float(z_eff) >= cruise_alt - 1e-6:
+                                danger_tau = 0.0
+                            else:
+                                dz = max(0.0, cruise_alt - float(z_eff))
+                                frac = float(dz) / max(1.0, cruise_alt)
+                                w = self.config.static_danger_altitude_violation_weight
+                                if w > 1e-9 and frac > 1e-9:
+                                    danger_tau = float(danger_tau) + float(w) * float(frac)
+                    else:
+                        # NORMAL MODE: Use actual altitude metadata from pheromones
+                        # Dynamic danger pheromone trails:
+                        # - default (dynamic-aware): informational only; ignore in planning cost
+                        # - ablation (treat dynamic as static): make A* route around the trail by *increasing* its cost
+                        if k.startswith("danger_dyn_"):
+                            treat_static = self.config.dyn_trail_static_for_planning
+                            if not treat_static:
+                                danger_tau = 0.0
+                            else:
+                                # "Temporary static overlay": amplify high (red) values more than low (green) ones.
+                                # overlay = strength * (danger_tau ^ gamma)
+                                strength = self.config.dyn_trail_overlay_strength
+                                gamma = self.config.dyn_trail_overlay_gamma
+                                strength = max(0.0, strength)
+                                gamma = max(0.5, gamma)
+                                overlay = float(strength) * (float(max(0.0, danger_tau)) ** float(gamma))
+                                danger_tau = float(danger_tau) + float(overlay)
+                                # When we explicitly "treat dynamic danger as static", allow overfly behavior:
+                                # if our effective planned altitude is above the stored threat altitude, do not penalize.
+                                alt_dyn = getattr(mk, "alt_m", None)
+                                if alt_dyn is not None:
+                                    if float(z_eff) >= float(alt_dyn) - 1e-6:
+                                        danger_tau = 0.0
+                                    else:
+                                        # Penalize altitude violation proportionally to how far below the required altitude we are.
+                                        dz = max(0.0, float(alt_dyn) - float(z_eff))
+                                        frac = float(dz) / max(1.0, float(alt_dyn))
+                                        w = self.config.static_danger_altitude_violation_weight
+                                        if w > 1e-9 and frac > 1e-9:
+                                            danger_tau = float(danger_tau) + float(w) * float(frac)
+                        if k.startswith("danger_static") and (getattr(mk, "alt_m", None) is not None):
+                            if float(z_eff) >= float(getattr(mk, "alt_m")) - 1e-6:
+                                danger_tau = 0.0
+                            else:
+                                # Penalize altitude violation proportionally to deficit.
+                                alt_req = float(getattr(mk, "alt_m"))
+                                dz = max(0.0, alt_req - float(z_eff))
+                                frac = float(dz) / max(1.0, alt_req)
+                                w = self.config.static_danger_altitude_violation_weight
+                                if w > 1e-9 and frac > 1e-9:
+                                    danger_tau = float(danger_tau) + float(w) * float(frac)
+        except Exception as e:
+            print(f"[DroneAgent] Error in altitude-aware cost calculation: {e}")
             pass
         is_unknown = (c not in self.known_free) and (c not in self.known_occ)
         unk = float(unknown_penalty) if is_unknown else 0.0
@@ -1156,11 +1195,14 @@ class PythonDrone:
         z_check = float(getattr(self.s, "z_cruise", self.s.z)) if bool(getattr(self.s, "overfly_active", False)) else float(self.s.z)
         dx, dy = math.cos(float(yaw)), math.sin(float(yaw))
         cur_c = self.grid.world_to_cell(self.s.x, self.s.y)
-        dilate = 0
-        try:
-            dilate = int(getattr(self, "empty_goal_dilate_cells", 0))
-        except Exception:
-            dilate = 0
+        dilate = self.config.empty_goal_dilate_cells
+
+        # BASELINE MODE: if baseline_no_empty_layer is enabled, skip empty checking entirely
+        baseline_no_empty = self.config.baseline_no_empty_layer
+        if baseline_no_empty:
+            # In baseline mode, don't use empty pheromones for goal selection
+            # Just return None to fall back to other goal selection methods
+            return None
 
         def has_empty_near(c0: Tuple[int, int]) -> bool:
             if self.pher.empty.get(c0) > 1e-6:
@@ -1530,14 +1572,11 @@ class PythonDrone:
                     kind_kernel = "danger_static"
                     kind_damage = "danger_static"
                     # Ensure we never enter inspector mode for this id.
-                    try:
-                        did = str(src_id or "")
-                        if did:
-                            self.s.dynamic_inspect_skip_ids.add(did)
-                            if str(getattr(self.s, "dynamic_inspect_active_id", "") or "") == did:
-                                self.s.dynamic_inspect_active_id = ""
-                    except Exception:
-                        pass
+                    did = str(src_id or "")
+                    if did:
+                        self.s.dynamic_inspect_skip_ids.add(did)
+                        if str(getattr(self.s, "dynamic_inspect_active_id", "") or "") == did:
+                            self.s.dynamic_inspect_active_id = ""
                 else:
                     # Split dynamic danger into:
                     # - kernel trace: where the threat center was observed (stronger / used for intercept reasoning)
@@ -1546,11 +1585,8 @@ class PythonDrone:
                     kind_kernel = (f"danger_dyn_kernel:{did}" if did else "danger_dyn_kernel")
                     kind_damage = (f"danger_dyn_damage:{did}" if did else "danger_dyn_damage")
                     # Remember we know this dynamic danger exists (local knowledge).
-                    try:
-                        if did:
-                            self.s.known_dynamic_danger_ids.add(did)
-                    except Exception:
-                        pass
+                    if did:
+                        self.s.known_dynamic_danger_ids.add(did)
             elif src_kind == "static":
                 kind_kernel = "danger_static"
                 kind_damage = "danger_static"
@@ -1723,10 +1759,11 @@ class PythonDrone:
                         if not los_ok:
                             continue
                         _deposit_danger_source_cell((int(cc[0]), int(cc[1])))
-                    except Exception:
+                    except Exception as e:
+                        print(f"[DroneAgent] Error depositing danger source cell: {e}")
                         continue
-        except Exception:
-            pass
+        except Exception as e:
+            print(f"[DroneAgent] Error in fast dynamic threat check: {e}")
 
         for ang in angles:
             hit = False
@@ -1745,8 +1782,8 @@ class PythonDrone:
                     # Evidence quality: distance from drone to this cell along the beam.
                     obs_dist_m = float(step) * float(self.grid.cell_size_m)
                     self.pher.deposit_explored(c, t=t_sim, conf=0.5, src=self.s.drone_uid, obs_dist_m=obs_dist_m)
-                except Exception:
-                    pass
+                except Exception as e:
+                    print(f"[DroneAgent] Error depositing explored pheromone: {e}")
                 # Danger-map hazards (static/dynamic): do NOT block the beam, but become "known" via pheromones once seen.
                 if danger_cells is not None and c in danger_cells:
                     _deposit_danger_source_cell(c)
@@ -1777,8 +1814,8 @@ class PythonDrone:
                                     if building_index.is_obstacle_xy(float(wx), float(wy), float(z_empty_check), float(safety_margin_z)):
                                         continue
                                     self.pher.deposit_empty(cc, t=t_sim, conf=0.55, src=self.s.drone_uid)
-                    except Exception:
-                        pass
+                    except Exception as e:
+                        print(f"[DroneAgent] Error depositing empty pheromone: {e}")
                     break  # beam stops at obstacle
                 else:
                     self.known_free[c] = True
@@ -1835,21 +1872,21 @@ class PythonDrone:
                         marked += 1
                     if marked >= max_kernel_marks:
                         break
-        except Exception:
-            pass
+        except Exception as e:
+            print(f"[DroneAgent] Error in dynamic kernel LiDAR detection: {e}")
 
         # If we discovered new occupancy/free info or new danger cells, bump perception revision.
         try:
             if len(self.known_occ) != occ0 or len(self.known_free) != free0 or len(self.pher.danger.v) != danger0:
                 self.s.perception_rev = int(getattr(self.s, "perception_rev", 0)) + 1
-        except Exception:
-            pass
+        except Exception as e:
+            print(f"[DroneAgent] Error incrementing perception revision: {e}")
         # If we discovered new obstacles or new danger cells, bump hazard revision.
         try:
             if len(self.known_occ) != occ0 or len(self.pher.danger.v) != danger0:
                 self.s.hazard_rev = int(getattr(self.s, "hazard_rev", 0)) + 1
-        except Exception:
-            pass
+        except Exception as e:
+            print(f"[DroneAgent] Error incrementing hazard revision: {e}")
 
     def try_detect_targets(
         self,
@@ -1925,6 +1962,288 @@ class PythonDrone:
                 tgt.found_t = t_sim
                 found.append(tgt)
         return found
+
+    def _update_avoidance_mode(
+        self,
+        t_sim: float,
+        building_index: BuildingIndex,
+        safety_margin_z: float,
+        map_bounds_m: MapBounds,
+        wall_clearance_m: float,
+    ):
+        """
+        Update avoidance (crab) mode state.
+        
+        Purpose: Check if drone should exit avoidance mode based on time limits
+        or if it has maneuvered far enough sideways with forward clearance restored.
+        """
+        if not bool(getattr(self.s, "avoid_active", False)):
+            return
+            
+        try:
+            dt_in = float(t_sim) - float(getattr(self.s, "avoid_start_t", t_sim))
+            max_time = float(getattr(self.s, "avoid_max_time_s", 8.0))
+            if dt_in >= max_time:
+                self.s.avoid_active = False
+            else:
+                entry_yaw = float(getattr(self.s, "avoid_entry_yaw", float(self.s.yaw)))
+                side = int(getattr(self.s, "avoid_side", 1))
+                crab_yaw = (entry_yaw + (math.pi / 2.0) * float(side)) % (2.0 * math.pi)
+                self.s.avoid_target_yaw = float(crab_yaw)
+                # Exit condition: if we've shifted sideways enough and forward is reasonably clear again.
+                dx = float(self.s.x) - float(getattr(self.s, "avoid_start_x", float(self.s.x)))
+                dy = float(self.s.y) - float(getattr(self.s, "avoid_start_y", float(self.s.y)))
+                # Lateral offset wrt entry yaw
+                lat = (-math.sin(entry_yaw) * dx) + (math.cos(entry_yaw) * dy)
+                need = self.s.avoid_need_lateral_m if self.s.avoid_need_lateral_m is not None else (self.grid.cell_size_m * 3.0)
+                if abs(lat) >= need:
+                    fwd_clear = self._ray_clearance_m(
+                        building_index=building_index,
+                        safety_margin_z=safety_margin_z,
+                        map_bounds_m=map_bounds_m,
+                        yaw=entry_yaw,
+                        max_dist_m=max(10.0, float(wall_clearance_m) * 2.0),
+                        step_m=self.grid.cell_size_m * 0.5,
+                    )
+                    if fwd_clear >= max(6.0, float(wall_clearance_m) * 0.9):
+                        self.s.avoid_active = False
+        except Exception as e:
+            print(f"[DroneAgent] Error in avoid clearance check: {e}")
+
+    def _handle_mode_transitions(self, dt: float, t_sim: float, base_xy: Tuple[float, float]):
+        """
+        Handle mode transitions based on energy and proximity to base.
+        Returns True if drone should stop step execution (reached base).
+        
+        Purpose: Manage EXPLORE->RETURN transition when energy is low,
+        and RETURN->RECHARGE transition when reaching base.
+        """
+        # Transition to RETURN when energy drops below threshold
+        if self.s.mode == "EXPLORE" and self.s.energy_units <= self.energy.return_threshold_units:
+            self.s.mode = "RETURN"
+            
+        if self.s.mode == "RETURN":
+            # Snap-to-base if we can reach it within this integration step.
+            # This avoids "orbiting" around base when dt is large (e.g., time acceleration).
+            dist_to_base = math.hypot(self.s.x - base_xy[0], self.s.y - base_xy[1])
+            if dist_to_base <= (self.s.speed_mps * dt + 1e-6):
+                self.s.x, self.s.y = float(base_xy[0]), float(base_xy[1])
+                self.s.mode = "RECHARGE"
+                self.s.energy_units = min(self.energy.full_units, self.energy.recharge_to_units)
+                return True
+            if math.hypot(self.s.x - base_xy[0], self.s.y - base_xy[1]) <= self.grid.cell_size_m * 2.0:
+                # at base
+                self.s.mode = "RECHARGE"
+                self.s.energy_units = min(self.energy.full_units, self.energy.recharge_to_units)
+                return True
+        return False
+
+    def _handle_return_legacy_astar(
+        self,
+        dt: float,
+        t_sim: float,
+        base_xy: Tuple[float, float],
+        mission_phase: str,
+        building_index: BuildingIndex,
+        safety_margin_z: float,
+        map_bounds_m: MapBounds,
+        local_plan_radius_m: float,
+        local_plan_inflate_cells: int,
+        local_plan_max_nodes: int,
+        local_plan_unknown_penalty: float,
+    ) -> bool:
+        """
+        Handle RETURN mode using legacy greedy A* (non-ACO) pathfinding.
+        Returns True if movement was executed, False if unable to move.
+        
+        Purpose: Legacy deterministic return-to-base behavior using pure A* without ACO scoring.
+        Tries straight-line first, falls back to A* pathfinding if obstacles block the way.
+        """
+        # Drop any ACO commitment and any previous local plan (RETURN should be deterministic).
+        self._aco_commit_cell = None
+        try:
+            self.last_aco_candidates = []
+            self.last_aco_choice_world = None
+            self.last_aco_choice_t = float(t_sim)
+        except Exception as e:
+            print(f"[DroneAgent] Error updating ACO choice time: {e}")
+        try:
+            self._active_plan_world = []
+            self._active_plan_idx = 0
+            self._active_plan_until_t = -1e9
+        except Exception as e:
+            print(f"[DroneAgent] Error clearing active plan: {e}")
+
+        def _line_clear_world_return(gx: float, gy: float) -> bool:
+            dx = gx - float(self.s.x)
+            dy = gy - float(self.s.y)
+            dist = math.hypot(dx, dy)
+            if dist <= 1e-6:
+                return True
+            yaw = math.atan2(dy, dx)
+            clear = self._ray_clearance_m(
+                building_index=building_index,
+                safety_margin_z=safety_margin_z,
+                map_bounds_m=map_bounds_m,
+                yaw=yaw,
+                max_dist_m=dist + 1e-3,
+                step_m=self.grid.cell_size_m * 0.5,
+            )
+            return clear >= (dist - self.grid.cell_size_m * 0.25)
+
+        # Fastest case: straight-line sprint to base when unobstructed.
+        bx, by = float(base_xy[0]), float(base_xy[1])
+        if _line_clear_world_return(bx, by):
+            step_m = float(self.s.speed_mps) * float(dt)
+            dx = bx - float(self.s.x)
+            dy = by - float(self.s.y)
+            dist = math.hypot(dx, dy)
+            if dist > 1e-6:
+                yaw = math.atan2(dy, dx)
+                scale = min(1.0, float(step_m) / float(dist))
+                nx = float(self.s.x) + float(dx) * float(scale)
+                ny = float(self.s.y) + float(dy) * float(scale)
+                if (not out_of_bounds(float(nx), float(ny), map_bounds_m)) and (
+                    not building_index.is_obstacle_xy(float(nx), float(ny), float(self.s.z), float(safety_margin_z))
+                ):
+                    dxy = math.hypot(float(nx) - float(self.s.x), float(ny) - float(self.s.y))
+                    self.s.x, self.s.y, self.s.yaw = float(nx), float(ny), float(yaw)
+                    self.last_move_source = "A*"
+                    dyaw = abs((float(yaw) - float(self._last_yaw) + math.pi) % (2.0 * math.pi) - math.pi)
+                    maneuver_factor = 1.0 + (0.2 if dyaw > (math.pi / 3.0) else 0.1 if dyaw > (math.pi / 6.0) else 0.0)
+                    self._update_energy(dxy, maneuver_factor=maneuver_factor)
+                    self.s.total_dist_m += float(dxy)
+                    self._last_yaw = float(yaw)
+                    c = self.grid.world_to_cell(self.s.x, self.s.y)
+                    self.s.recent_cells.append(c)
+                    return True
+
+        # Otherwise: greedy local A* step toward base
+        nc = self._local_a_star_next_cell(
+            goal_xy=(bx, by),
+            mission_phase=mission_phase,
+            building_index=building_index,
+            safety_margin_z=safety_margin_z,
+            map_bounds_m=map_bounds_m,
+            plan_radius_m=float(local_plan_radius_m),
+            inflate_cells=max(0, int(local_plan_inflate_cells)),
+            max_nodes=int(local_plan_max_nodes),
+            unknown_penalty=float(local_plan_unknown_penalty),
+            recent_penalty=0.0,
+        )
+        if nc is not None:
+            tx, ty = self.grid.cell_to_world(int(nc[0]), int(nc[1]))
+            yaw = math.atan2(float(ty) - float(self.s.y), float(tx) - float(self.s.x))
+            step_m = float(self.s.speed_mps) * float(dt)
+            dist = math.hypot(float(tx) - float(self.s.x), float(ty) - float(self.s.y))
+            if dist > 1e-6:
+                scale = min(1.0, float(step_m) / float(dist))
+                nx = float(self.s.x) + (float(tx) - float(self.s.x)) * float(scale)
+                ny = float(self.s.y) + (float(ty) - float(self.s.y)) * float(scale)
+                if (not out_of_bounds(float(nx), float(ny), map_bounds_m)) and (
+                    not building_index.is_obstacle_xy(float(nx), float(ny), float(self.s.z), float(safety_margin_z))
+                ):
+                    dxy = math.hypot(float(nx) - float(self.s.x), float(ny) - float(self.s.y))
+                    self.s.x, self.s.y, self.s.yaw = float(nx), float(ny), float(yaw)
+                    self.last_move_source = "A*"
+                    dyaw = abs((float(yaw) - float(self._last_yaw) + math.pi) % (2.0 * math.pi) - math.pi)
+                    maneuver_factor = 1.0 + (0.2 if dyaw > (math.pi / 3.0) else 0.1 if dyaw > (math.pi / 6.0) else 0.0)
+                    self._update_energy(dxy, maneuver_factor=maneuver_factor)
+                    self.s.total_dist_m += float(dxy)
+                    self._last_yaw = float(yaw)
+                    c = self.grid.world_to_cell(self.s.x, self.s.y)
+                    self.s.recent_cells.append(c)
+                    return True
+        return False
+
+    def _check_static_altitude_current_cell(self, t_sim: float, dynamic_danger_trail_as_static: bool) -> bool:
+        """
+        Check if drone is currently in a static danger cell requiring altitude climb.
+        Returns True if the drone should stop horizontal movement and climb.
+        
+        Purpose: Enforce static danger altitude requirements - if we're inside a danger zone
+        that requires higher altitude, stop moving horizontally and climb first.
+        """
+        try:
+            treat_dyn_trail_as_static_alt = bool(dynamic_danger_trail_as_static)
+            cur_c = self.grid.world_to_cell(float(self.s.x), float(self.s.y))
+            cur_cc = (int(cur_c[0]), int(cur_c[1]))
+            mk0 = self.pher.danger.meta.get(cur_cc)
+            if mk0 is not None:
+                k0 = str(getattr(mk0, "kind", "") or "")
+                is_static_like = bool(k0.startswith("danger_static")) or (
+                    bool(treat_dyn_trail_as_static_alt) and bool(k0.startswith("danger_dyn_"))
+                )
+            else:
+                is_static_like = False
+            if mk0 is not None and bool(is_static_like):
+                # Only enforce if the pheromone value is actually present (avoid stale meta edge cases).
+                if float(self.pher.danger.get(cur_cc)) > 1e-6:
+                    alt0 = getattr(mk0, "alt_m", None)
+                    if alt0 is not None and float(self.s.z) < float(alt0) - 1e-6:
+                        req = float(alt0)
+                        self.s.overfly_active = True
+                        self.s.z_target = float(max(req, float(getattr(self.s, "z_target", self.s.z))))
+                        self.s.preclimb_static_hold = True
+                        self.s.preclimb_static_req_alt = float(req)
+                        self.last_move_source = "STATIC_ALT_HOLD"
+                        self._log_preclimb_cell(cur_cc, req_alt=req, why="inside_static_cell", t_sim=t_sim)
+                        return True
+        except Exception as e:
+            print(f"[DroneAgent] Error in static altitude current-cell check: {e}")
+        return False
+
+    def _check_preclimb_hold(self, t_sim: float) -> bool:
+        """
+        Check if drone should hold horizontal movement while climbing to required altitude.
+        Returns True if still climbing (should not move horizontally).
+        
+        Purpose: If we started a pre-climb before entering danger, wait until we reach
+        the target altitude before resuming horizontal movement.
+        """
+        try:
+            if bool(getattr(self.s, "preclimb_static_hold", False)):
+                zt = float(getattr(self.s, "z_target", self.s.z))
+                try:
+                    zt = max(float(zt), float(getattr(self.s, "preclimb_static_req_alt", zt)))
+                except Exception:
+                    pass
+                reached = float(self.s.z) >= float(zt) - 0.35
+                if reached:
+                    self.s.preclimb_static_hold = False
+                else:
+                    self.last_move_source = "PRECLIMB_STATIC_HOLD"
+                    try:
+                        cur_c = self.grid.world_to_cell(float(self.s.x), float(self.s.y))
+                        cur_cc = (int(cur_c[0]), int(cur_c[1]))
+                        self._log_preclimb_cell(cur_cc, req_alt=float(zt), why="hold_wait", t_sim=t_sim)
+                    except Exception:
+                        pass
+                    return True
+        except Exception as e:
+            print(f"[DroneAgent] Error in preclimb static hold check: {e}")
+        return False
+
+    def _log_preclimb_cell(self, c: Tuple[int, int], req_alt: float, why: str, t_sim: float):
+        """Throttle log spam: print once per cell (or at most 1 Hz)."""
+        try:
+            last_c = getattr(self.s, "preclimb_static_last_log_cell", None)
+            last_t = float(getattr(self.s, "preclimb_static_last_log_t", -1e9))
+            if last_c == tuple(c) and (float(t_sim) - float(last_t)) < 1.0:
+                return
+            self.s.preclimb_static_last_log_cell = (int(c[0]), int(c[1]))
+            self.s.preclimb_static_last_log_t = float(t_sim)
+        except Exception:
+            pass
+        try:
+            print(
+                f"[static_alt] {str(getattr(self.s,'drone_uid','?'))} "
+                f"t={float(t_sim):.2f} cell=({int(c[0])},{int(c[1])}) "
+                f"z={float(self.s.z):.2f} req={float(req_alt):.2f} why={str(why)}"
+            )
+        except Exception:
+            # Never crash step due to logging
+            pass
 
     def step(
         self,
@@ -2114,88 +2433,17 @@ class PythonDrone:
         # Conflict resolution happens during comms: if two drones inspect the same id, the newer (higher t) stops.
         # Make planning helpers available to _pierce_empty_goal_world via per-drone attributes.
         # (We keep these as attributes so we don't have to thread params through many helpers.)
-        try:
-            self.empty_goal_dilate_cells = int(empty_goal_dilate_cells)
-        except Exception:
-            self.empty_goal_dilate_cells = 0
+        self.empty_goal_dilate_cells = self.config.empty_goal_dilate_cells
         if self.s.mode in ("IDLE", "RECHARGE"):
             return
 
-        def _log_preclimb_cell(c: Tuple[int, int], req_alt: float, why: str):
-            """Throttle log spam: print once per cell (or at most 1 Hz)."""
-            try:
-                last_c = getattr(self.s, "preclimb_static_last_log_cell", None)
-                last_t = float(getattr(self.s, "preclimb_static_last_log_t", -1e9))
-                if last_c == tuple(c) and (float(t_sim) - float(last_t)) < 1.0:
-                    return
-                self.s.preclimb_static_last_log_cell = (int(c[0]), int(c[1]))
-                self.s.preclimb_static_last_log_t = float(t_sim)
-            except Exception:
-                pass
-            try:
-                print(
-                    f"[static_alt] {str(getattr(self.s,'drone_uid','?'))} "
-                    f"t={float(t_sim):.2f} cell=({int(c[0])},{int(c[1])}) "
-                    f"z={float(self.s.z):.2f} req={float(req_alt):.2f} why={str(why)}"
-                )
-            except Exception:
-                # Never crash step due to logging
-                pass
+        # Hard rule: if currently inside static danger cell requiring higher altitude, climb first
+        if self._check_static_altitude_current_cell(t_sim, dynamic_danger_trail_as_static):
+            return
 
-        # Hard rule (per user): treat static danger altitude like building altitude.
-        # If the drone is currently inside ANY static-danger pheromone cell whose required altitude > z,
-        # it must climb first and may NOT move in XY.
-        try:
-            treat_dyn_trail_as_static_alt = bool(dynamic_danger_trail_as_static)
-            cur_c = self.grid.world_to_cell(float(self.s.x), float(self.s.y))
-            cur_cc = (int(cur_c[0]), int(cur_c[1]))
-            mk0 = self.pher.danger.meta.get(cur_cc)
-            if mk0 is not None:
-                k0 = str(getattr(mk0, "kind", "") or "")
-                is_static_like = bool(k0.startswith("danger_static")) or (
-                    bool(treat_dyn_trail_as_static_alt) and bool(k0.startswith("danger_dyn_"))
-                )
-            else:
-                is_static_like = False
-            if mk0 is not None and bool(is_static_like):
-                # Only enforce if the pheromone value is actually present (avoid stale meta edge cases).
-                if float(self.pher.danger.get(cur_cc)) > 1e-6:
-                    alt0 = getattr(mk0, "alt_m", None)
-                    if alt0 is not None and float(self.s.z) < float(alt0) - 1e-6:
-                        req = float(alt0)
-                        self.s.overfly_active = True
-                        self.s.z_target = float(max(req, float(getattr(self.s, "z_target", self.s.z))))
-                        self.s.preclimb_static_hold = True
-                        self.s.preclimb_static_req_alt = float(req)
-                        self.last_move_source = "STATIC_ALT_HOLD"
-                        _log_preclimb_cell(cur_cc, req_alt=req, why="inside_static_cell")
-                        return
-        except Exception:
-            pass
-
-        # If we triggered a "pre-climb before entering static danger" latch, do not move horizontally
-        # until we reach (approximately) the target altitude.
-        try:
-            if bool(getattr(self.s, "preclimb_static_hold", False)):
-                zt = float(getattr(self.s, "z_target", self.s.z))
-                try:
-                    zt = max(float(zt), float(getattr(self.s, "preclimb_static_req_alt", zt)))
-                except Exception:
-                    pass
-                reached = float(self.s.z) >= float(zt) - 0.35
-                if reached:
-                    self.s.preclimb_static_hold = False
-                else:
-                    self.last_move_source = "PRECLIMB_STATIC_HOLD"
-                    try:
-                        cur_c = self.grid.world_to_cell(float(self.s.x), float(self.s.y))
-                        cur_cc = (int(cur_c[0]), int(cur_c[1]))
-                        _log_preclimb_cell(cur_cc, req_alt=float(zt), why="hold_wait")
-                    except Exception:
-                        pass
-                    return
-        except Exception:
-            pass
+        # If already climbing to required altitude, wait until reached before moving horizontally
+        if self._check_preclimb_hold(t_sim):
+            return
 
         def _block_xy_until_static_alt_ok(nx: float, ny: float, yaw: float) -> bool:
             """Return True if we should freeze XY and only climb.
@@ -2244,10 +2492,7 @@ class PythonDrone:
                         if float(self.s.z) < float(best_alt) - 1e-6:
                             self.s.overfly_active = True
                             self.s.z_target = float(max(float(best_alt), float(getattr(self.s, "z_target", self.s.z))))
-                            try:
-                                self.s.preclimb_static_req_alt = float(best_alt)
-                            except Exception:
-                                pass
+                            self.s.preclimb_static_req_alt = float(best_alt)
                 except Exception:
                     pass
 
@@ -2301,31 +2546,19 @@ class PythonDrone:
                 self.s.overfly_start_y = float(getattr(self.s, "overfly_start_y", self.s.y))
                 self.s.overfly_start_t = float(getattr(self.s, "overfly_start_t", t_sim))
                 self.s.preclimb_static_hold = True
-                try:
-                    self.s.preclimb_static_req_alt = float(alt_req)
-                except Exception:
-                    pass
+                self.s.preclimb_static_req_alt = float(alt_req)
                 # If we need to climb, drop any committed plan/commitment so we replan cleanly after reaching altitude.
-                try:
-                    self._active_plan_world = []
-                    self._active_plan_idx = 0
-                    self._active_plan_until_t = -1e9
-                except Exception:
-                    pass
-                try:
-                    self._aco_commit_cell = None
-                    self._aco_commit_until_t = -1e9
-                except Exception:
-                    pass
+                self._active_plan_world = []
+                self._active_plan_idx = 0
+                self._active_plan_until_t = -1e9
+                self._aco_commit_cell = None
+                self._aco_commit_until_t = -1e9
                 self.last_move_source = "PRECLIMB_STATIC"
                 # Face intended direction while climbing (nice visually; also keeps behavior consistent).
+                self.s.yaw = float(yaw)
+                self._last_yaw = float(yaw)
                 try:
-                    self.s.yaw = float(yaw)
-                    self._last_yaw = float(yaw)
-                except Exception:
-                    pass
-                try:
-                    _log_preclimb_cell(self.grid.world_to_cell(float(self.s.x), float(self.s.y)), req_alt=float(alt_req), why="segment_gate")
+                    self._log_preclimb_cell(self.grid.world_to_cell(float(self.s.x), float(self.s.y)), req_alt=float(alt_req), why="segment_gate", t_sim=t_sim)
                 except Exception:
                     pass
                 return True
@@ -2336,32 +2569,17 @@ class PythonDrone:
         # - Do not penalize "unknown" (we are not exploring).
         # - Do not inflate lidar-hit occupancy (we rely on pheromone nav_danger + true-geometry collision checks).
         if str(mission_phase).upper() == "EXPLOIT":
-            try:
-                local_plan_unknown_penalty = 0.0
-            except Exception:
-                pass
-            try:
-                local_plan_inflate_cells = 0
-            except Exception:
-                pass
+            local_plan_unknown_penalty = 0.0
+            local_plan_inflate_cells = 0
             # Make dynamic-trail planning behavior available to A* cost evaluation.
             # - False: ignore dynamic danger pheromone trails (dynamic-aware optimization)
             # - True: treat them as static and bias A* to route around them
-            try:
-                self._dyn_trail_static_for_planning = bool(dynamic_danger_trail_as_static)
-            except Exception:
-                self._dyn_trail_static_for_planning = False
+            self.config.dyn_trail_static_for_planning = bool(dynamic_danger_trail_as_static)
             # Parameters for the temporary "static overlay" penalty derived from dynamic trail intensity.
-            try:
-                pp = getattr(self, "_exploit_peer_params", None) or {}
-                self._dyn_trail_overlay_strength = float(pp.get("dyn_overlay_strength", getattr(self, "_dyn_trail_overlay_strength", 3.0)))
-            except Exception:
-                self._dyn_trail_overlay_strength = 3.0
-            try:
-                pp = getattr(self, "_exploit_peer_params", None) or {}
-                self._dyn_trail_overlay_gamma = float(pp.get("dyn_overlay_gamma", getattr(self, "_dyn_trail_overlay_gamma", 1.8)))
-            except Exception:
-                self._dyn_trail_overlay_gamma = 1.8
+            pp = getattr(self, "_exploit_peer_params", None) or {}
+            self.config.dyn_trail_overlay_strength = float(pp.get("dyn_overlay_strength", self.config.dyn_trail_overlay_strength))
+            pp = getattr(self, "_exploit_peer_params", None) or {}
+            self.config.dyn_trail_overlay_gamma = float(pp.get("dyn_overlay_gamma", self.config.dyn_trail_overlay_gamma))
 
         # Dynamic danger hard no-fly (current location only, not pheromone trail):
         # - Only enabled for danger ids this drone knows (learned via LiDAR or comms).
@@ -2399,55 +2617,18 @@ class PythonDrone:
 
         # Avoidance (crab) mode: temporarily force a sideways heading to bypass obstacles.
         # This is purely a steering override; it should NOT create attractive navigation trails.
-        if bool(getattr(self.s, "avoid_active", False)):
-            try:
-                dt_in = float(t_sim) - float(getattr(self.s, "avoid_start_t", t_sim))
-                max_time = float(getattr(self.s, "avoid_max_time_s", 8.0))
-                if dt_in >= max_time:
-                    self.s.avoid_active = False
-                else:
-                    entry_yaw = float(getattr(self.s, "avoid_entry_yaw", float(self.s.yaw)))
-                    side = int(getattr(self.s, "avoid_side", 1))
-                    crab_yaw = (entry_yaw + (math.pi / 2.0) * float(side)) % (2.0 * math.pi)
-                    self.s.avoid_target_yaw = float(crab_yaw)
-                    # Exit condition: if we've shifted sideways enough and forward is reasonably clear again.
-                    dx = float(self.s.x) - float(getattr(self.s, "avoid_start_x", float(self.s.x)))
-                    dy = float(self.s.y) - float(getattr(self.s, "avoid_start_y", float(self.s.y)))
-                    # Lateral offset wrt entry yaw
-                    lat = (-math.sin(entry_yaw) * dx) + (math.cos(entry_yaw) * dy)
-                    need = float(getattr(self.s, "avoid_need_lateral_m", float(self.grid.cell_size_m) * 3.0))
-                    if abs(lat) >= need:
-                        fwd_clear = self._ray_clearance_m(
-                            building_index=building_index,
-                            safety_margin_z=safety_margin_z,
-                            map_bounds_m=map_bounds_m,
-                            yaw=entry_yaw,
-                            max_dist_m=max(10.0, float(wall_clearance_m) * 2.0),
-                            step_m=self.grid.cell_size_m * 0.5,
-                        )
-                        if fwd_clear >= max(6.0, float(wall_clearance_m) * 0.9):
-                            self.s.avoid_active = False
-            except Exception:
-                pass
+        self._update_avoidance_mode(t_sim, building_index, safety_margin_z, map_bounds_m, wall_clearance_m)
 
-        # mode transitions based on energy
-        if self.s.mode == "EXPLORE" and self.s.energy_units <= self.energy.return_threshold_units:
-            self.s.mode = "RETURN"
-        if self.s.mode == "RETURN":
-            # Snap-to-base if we can reach it within this integration step.
-            # This avoids "orbiting" around base when dt is large (e.g., time acceleration).
-            dist_to_base = math.hypot(self.s.x - base_xy[0], self.s.y - base_xy[1])
-            if dist_to_base <= (self.s.speed_mps * dt + 1e-6):
-                self.s.x, self.s.y = float(base_xy[0]), float(base_xy[1])
-                self.s.mode = "RECHARGE"
-                self.s.energy_units = min(self.energy.full_units, self.energy.recharge_to_units)
-                return
-            if math.hypot(self.s.x - base_xy[0], self.s.y - base_xy[1]) <= self.grid.cell_size_m * 2.0:
-                # at base
-                self.s.mode = "RECHARGE"
-                self.s.energy_units = min(self.energy.full_units, self.energy.recharge_to_units)
-                return
+        # Mode transitions based on energy and proximity to base
+        if self._handle_mode_transitions(dt, t_sim, base_xy):
+            return
 
+        # =================================================================
+        # PHASE 1: PERCEPTION & SETUP
+        # =================================================================
+        # Setup configuration, check altitude constraints, handle mode transitions,
+        # prepare dynamic danger tracking
+        
         self._set_speed_for_mode(return_speed_mps=return_speed_mps)
 
         # -----------------------------
@@ -2456,105 +2637,20 @@ class PythonDrone:
         # Historically RETURN used greedy A* (deterministic) and did not use ACO scoring at all.
         # We keep it as an option for ablations; default is now ACO-style RETURN.
         if self.s.mode == "RETURN" and (not bool(return_use_aco_enabled)):
-            # Drop any ACO commitment and any previous local plan (RETURN should be deterministic).
-            self._aco_commit_cell = None
-            try:
-                self.last_aco_candidates = []
-                self.last_aco_choice_world = None
-                self.last_aco_choice_t = float(t_sim)
-            except Exception:
-                pass
-            try:
-                self._active_plan_world = []
-                self._active_plan_idx = 0
-                self._active_plan_until_t = -1e9
-            except Exception:
-                pass
-
-            def _line_clear_world_return(gx: float, gy: float) -> bool:
-                dx = gx - float(self.s.x)
-                dy = gy - float(self.s.y)
-                dist = math.hypot(dx, dy)
-                if dist <= 1e-6:
-                    return True
-                yaw = math.atan2(dy, dx)
-                clear = self._ray_clearance_m(
-                    building_index=building_index,
-                    safety_margin_z=safety_margin_z,
-                    map_bounds_m=map_bounds_m,
-                    yaw=yaw,
-                    max_dist_m=dist + 1e-3,
-                    step_m=self.grid.cell_size_m * 0.5,
-                )
-                return clear >= (dist - self.grid.cell_size_m * 0.25)
-
-            # Fastest case: straight-line sprint to base when unobstructed.
-            bx, by = float(base_xy[0]), float(base_xy[1])
-            if _line_clear_world_return(bx, by):
-                step_m = float(self.s.speed_mps) * float(dt)
-                dx = bx - float(self.s.x)
-                dy = by - float(self.s.y)
-                dist = math.hypot(dx, dy)
-                if dist > 1e-6:
-                    yaw = math.atan2(dy, dx)
-                    scale = min(1.0, float(step_m) / float(dist))
-                    nx = float(self.s.x) + float(dx) * float(scale)
-                    ny = float(self.s.y) + float(dy) * float(scale)
-                    if (not out_of_bounds(float(nx), float(ny), map_bounds_m)) and (
-                        not building_index.is_obstacle_xy(float(nx), float(ny), float(self.s.z), float(safety_margin_z))
-                    ):
-                        dxy = math.hypot(float(nx) - float(self.s.x), float(ny) - float(self.s.y))
-                        self.s.x, self.s.y, self.s.yaw = float(nx), float(ny), float(yaw)
-                        self.last_move_source = "A*"
-                        dyaw = abs((float(yaw) - float(self._last_yaw) + math.pi) % (2.0 * math.pi) - math.pi)
-                        maneuver_factor = 1.0 + (0.2 if dyaw > (math.pi / 3.0) else 0.1 if dyaw > (math.pi / 6.0) else 0.0)
-                        self._update_energy(dxy, maneuver_factor=maneuver_factor)
-                        self.s.total_dist_m += float(dxy)
-                        self._last_yaw = float(yaw)
-                        c = self.grid.world_to_cell(self.s.x, self.s.y)
-                        self.s.recent_cells.append(c)
-                        return
-
-            # Otherwise: greedy local A* step toward base (A* includes danger/unknown/revisit costs;
-            # the "no ACO" part is enforced by handling RETURN here and returning early).
-            nc = self._local_a_star_next_cell(
-                goal_xy=(bx, by),
+            if self._handle_return_legacy_astar(
+                dt=dt,
+                t_sim=t_sim,
+                base_xy=base_xy,
                 mission_phase=mission_phase,
                 building_index=building_index,
                 safety_margin_z=safety_margin_z,
                 map_bounds_m=map_bounds_m,
-                plan_radius_m=float(local_plan_radius_m),
-                inflate_cells=max(0, int(local_plan_inflate_cells)),
-                max_nodes=int(local_plan_max_nodes),
-                unknown_penalty=float(local_plan_unknown_penalty),
-                # When returning to base, prioritize making progress over "novelty".
-                # The recent-cell revisit penalty can otherwise repel the drone from the only viable
-                # corridor home (often the corridor it just used), causing oscillation/orbiting.
-                recent_penalty=0.0,
-            )
-            if nc is not None:
-                tx, ty = self.grid.cell_to_world(int(nc[0]), int(nc[1]))
-                yaw = math.atan2(float(ty) - float(self.s.y), float(tx) - float(self.s.x))
-                step_m = float(self.s.speed_mps) * float(dt)
-                dist = math.hypot(float(tx) - float(self.s.x), float(ty) - float(self.s.y))
-                if dist > 1e-6:
-                    scale = min(1.0, float(step_m) / float(dist))
-                    nx = float(self.s.x) + (float(tx) - float(self.s.x)) * float(scale)
-                    ny = float(self.s.y) + (float(ty) - float(self.s.y)) * float(scale)
-                    if (not out_of_bounds(float(nx), float(ny), map_bounds_m)) and (
-                        not building_index.is_obstacle_xy(float(nx), float(ny), float(self.s.z), float(safety_margin_z))
-                    ):
-                        dxy = math.hypot(float(nx) - float(self.s.x), float(ny) - float(self.s.y))
-                        self.s.x, self.s.y, self.s.yaw = float(nx), float(ny), float(yaw)
-                        self.last_move_source = "A*"
-                        dyaw = abs((float(yaw) - float(self._last_yaw) + math.pi) % (2.0 * math.pi) - math.pi)
-                        maneuver_factor = 1.0 + (0.2 if dyaw > (math.pi / 3.0) else 0.1 if dyaw > (math.pi / 6.0) else 0.0)
-                        self._update_energy(dxy, maneuver_factor=maneuver_factor)
-                        self.s.total_dist_m += float(dxy)
-                        self._last_yaw = float(yaw)
-                        c = self.grid.world_to_cell(self.s.x, self.s.y)
-                        self.s.recent_cells.append(c)
-                        return
+                local_plan_radius_m=local_plan_radius_m,
+                local_plan_inflate_cells=local_plan_inflate_cells,
+                local_plan_max_nodes=local_plan_max_nodes,
+                local_plan_unknown_penalty=local_plan_unknown_penalty,
+            ):
+                return
 
             # Fallback: small escape move if local A* couldn't find any step (rare).
             if bool(unstick_move_enabled):
@@ -2578,10 +2674,7 @@ class PythonDrone:
 
         # ACO commitment: if we already chose a next cell, keep moving toward it until reached,
         # unless we learned something new about hazards (obstacles/danger) or it becomes invalid.
-        try:
-            commit_enabled = bool(getattr(self, "aco_commit_enabled", True))
-        except Exception:
-            commit_enabled = True
+        commit_enabled = self.config.aco_commit_enabled
         if commit_enabled and self._aco_commit_cell is not None and self.s.mode == "EXPLORE" and mission_phase == "EXPLORE":
             # If avoidance mode is active, drop commitment and let avoidance steer.
             if bool(getattr(self.s, "avoid_active", False)):
@@ -2629,6 +2722,12 @@ class PythonDrone:
                 except Exception:
                     self._aco_commit_cell = None
 
+        # =================================================================
+        # PHASE 2: DECISION MAKING - Generate & Score Candidates
+        # =================================================================
+        # Generate candidate movement directions, score them using ACO-style heuristics
+        # (pheromones, danger avoidance, exploration rewards, etc.)
+        
         # Candidate headings (ACO-style direction decision)
         # NOTE: no full A*; cheap local decision.
         headings = 24
@@ -2692,26 +2791,23 @@ class PythonDrone:
                                     inspector_kernel_rt_speed_s,
                                     str(self.s.drone_uid),
                                 )
-                            except Exception:
-                                pass
-        except Exception:
-            pass
+                            except Exception as e:
+                                print(f"[DroneAgent] Error recording dynamic kernel observation: {e}")
+        except Exception as e:
+            print(f"[DroneAgent] Error in inspector active check: {e}")
 
         # Inspector stop conditions:
         # - Only inspect while the threat is within LiDAR range (realtime visible in this step)
         # - Only inspect while we have enough battery budget
         if inspector_active and inspector_did0:
-            try:
-                min_e = float(getattr(self, "dyn_inspector_min_energy_units", getattr(self.energy, "return_threshold_units", 50.0)))
-            except Exception:
-                min_e = 50.0
+            min_e = self.config.dyn_inspector_min_energy_units if self.config.dyn_inspector_min_energy_units is not None else self.energy.return_threshold_units
             if (not bool(inspector_kernel_rt_visible)) or (float(self.s.energy_units) <= float(min_e)):
                 try:
                     # Move on: stop being an inspector for this threat.
                     self.s.dynamic_inspect_active_id = ""
                     self.s.dynamic_inspect_skip_ids.add(str(inspector_did0))
-                except Exception:
-                    pass
+                except Exception as e:
+                    print(f"[DroneAgent] Error deactivating inspector: {e}")
                 inspector_active = False
                 inspector_did0 = ""
 
@@ -2869,10 +2965,20 @@ class PythonDrone:
             return best_pen, best_mode, best_cell
 
         def _explored_effective(c: Tuple[int, int]) -> float:
-            """Explored evidence in [0..1], discounted by age and observation distance."""
+            """Explored evidence in [0..1], discounted by age and observation distance.
+            
+            BASELINE MODE: if baseline_no_explored_gradient is enabled, return binary 0/1
+            without age or distance discounting.
+            """
             v0 = float(self.pher.explored.get(c))
             if v0 <= 1e-6:
                 return 0.0
+            
+            # BASELINE MODE: return binary explored (0 or 1) without quality metrics
+            baseline_no_gradient = bool(getattr(self, "baseline_no_explored_gradient", False))
+            if baseline_no_gradient:
+                return 1.0 if v0 > 1e-6 else 0.0
+            
             mk = self.pher.explored.meta.get(c)
             if mk is None:
                 return float(max(0.0, min(1.0, v0)))
@@ -2904,6 +3010,7 @@ class PythonDrone:
 
         # Precompute "far-ring low explored density" probes once per step (used as a directional bonus).
         far_density_probes: List[Tuple[float, float]] = []  # (probe_yaw, bonus=(1-mean_explored))
+        self.last_far_probes = []
         if (not inspector_active) and self.s.mode == "EXPLORE" and mission_phase == "EXPLORE":
             try:
                 w_far = float(explore_far_density_weight)
@@ -2912,6 +3019,7 @@ class PythonDrone:
                 step_deg = float(explore_far_density_angle_step_deg)
                 excl_inside = bool(explore_far_density_exclude_inside_ring)
                 if w_far > 1e-9 and x_ring > 0 and y_kern >= 0 and step_deg > 1e-6:
+                    self.last_far_probes_t = float(t_sim)
                     cur_cell = self.grid.world_to_cell(self.s.x, self.s.y)
                     x2_ring = int(x_ring) * int(x_ring)
                     use_explore_area = float(exploration_area_radius_m) > 1e-6
@@ -2944,6 +3052,10 @@ class PythonDrone:
                                     ddy = int(y2) - int(cur_cell[1])
                                     if (ddx * ddx + ddy * ddy) < int(x2_ring):
                                         continue
+                                
+                                # Record cell for visualization
+                                self.last_far_probes.append((int(x2), int(y2)))
+
                                 if use_explore_area:
                                     # Important: cells outside the exploration area count as "explored"
                                     # so the boundary doesn't look artificially low-density.
@@ -3160,8 +3272,8 @@ class PythonDrone:
                     if k0.startswith("danger_dyn_") and bool(dynamic_danger_trail_as_static):
                         # Increase trail cost in the "treat as static" comparison mode using the same
                         # overlay rule as A* (stronger for high/red values).
-                        strength = float(getattr(self, "_dyn_trail_overlay_strength", 3.0))
-                        gamma = float(getattr(self, "_dyn_trail_overlay_gamma", 1.8))
+                        strength = self.config.dyn_trail_overlay_strength
+                        gamma = self.config.dyn_trail_overlay_gamma
                         strength = max(0.0, strength)
                         gamma = max(0.5, gamma)
                         danger_tau = float(danger_tau) + float(strength) * (float(max(0.0, danger_tau)) ** float(gamma))
@@ -3188,12 +3300,13 @@ class PythonDrone:
                                 if float(z_eff) < float(alt0) - 1e-6:
                                     dz = max(0.0, float(alt0) - float(z_eff))
                                     frac = float(dz) / max(1.0, float(alt0))
-                                    w = float(getattr(self, "static_danger_altitude_violation_weight", 0.0))
+                                    w = self.config.static_danger_altitude_violation_weight
                                     if w > 1e-9 and frac > 1e-9:
                                         danger_tau = float(danger_tau) + float(w) * float(frac)
                 except Exception:
                     pass
                 unknown_bonus = 0.0 if inspector_active else (1.0 if (cc not in self.known_free and cc not in self.known_occ) else 0.0)
+                # In baseline mode, _explored_effective returns binary (0 or 1) without age/distance context
                 explored_tau = float(_explored_effective(cc))
                 recent_pen = 0.0
                 if self.s.mode == "EXPLORE" and cc in self.s.recent_cells:
@@ -4039,6 +4152,12 @@ class PythonDrone:
                 pass
             return
 
+        # =================================================================
+        # PHASE 3: SELECTION & EXECUTION
+        # =================================================================
+        # Select best candidate (greedy or softmax), execute movement,
+        # update state, commit decisions, deposit pheromones
+        
         # Selection:
         # - EXPLOIT is greedy (otherwise it can dither and even increase distance temporarily).
         # - Active INSPECTOR is greedy (user requested removing base ACO randomness; "just follow the threat").

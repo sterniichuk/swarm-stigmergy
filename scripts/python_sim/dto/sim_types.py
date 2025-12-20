@@ -176,6 +176,7 @@ class DroneState:
     avoid_start_y: float = 0.0
     avoid_start_t: float = -1e9
     avoid_target_yaw: float = 0.0
+    avoid_need_lateral_m: Optional[float] = None
 
     # Hop-over-lowest mode for L-corners:
     # climb just above the lowest blocking roof, move over it, then go straight.
@@ -211,4 +212,33 @@ class DroneState:
     threat_decision_cell: Optional[Tuple[int, int]] = None  # cell to point at (threat is/might be here)
     threat_decision_mode: str = ""  # "cross" | "avoid" | ""
     threat_decision_t: float = -1e9  # sim time when decision was made
+
+    # Pre-climb static altitude handling
+    preclimb_static_hold: bool = False
+    preclimb_static_req_alt: Optional[float] = None
+    preclimb_static_last_log_t: Optional[float] = None
+
+
+@dataclass
+class DroneConfig:
+    """Configuration parameters for drone behavior (formerly accessed via getattr)."""
+    
+    # Empty layer and goal dilation
+    empty_goal_dilate_cells: int = 0
+    baseline_no_empty_layer: bool = False
+    baseline_no_altitude_awareness: bool = False
+    
+    # Altitude and danger parameters
+    static_danger_altitude_violation_weight: float = 0.0
+    
+    # Inspector parameters
+    dyn_inspector_min_energy_units: Optional[float] = None
+    
+    # ACO commitment
+    aco_commit_enabled: bool = True
+    
+    # Dynamic trail parameters (for EXPLOIT mode)
+    dyn_trail_static_for_planning: bool = False
+    dyn_trail_overlay_strength: float = 3.0
+    dyn_trail_overlay_gamma: float = 1.8
 
